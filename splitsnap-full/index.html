@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SplitSnap - Interactive Prototype</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0f0f0f;
+    font-family: 'Inter', -apple-system, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== TOP BAR ===== */
+  #top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 24px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+  #top-bar .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #top-bar .brand .logo {
+    width: 28px; height: 28px;
+    background: #F97316;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 800; font-size: 14px;
+  }
+  #top-bar .brand span {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .view-toggle {
+    display: flex;
+    background: #2a2a2a;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .view-toggle button {
+    padding: 7px 16px;
+    border: none;
+    background: transparent;
+    color: #888;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .view-toggle button.active {
+    background: #F97316;
+    color: #fff;
+  }
+  .view-toggle button:hover:not(.active) {
+    color: #ccc;
+  }
+  #screen-name {
+    color: #888;
+    font-size: 12px;
+    min-width: 150px;
+    text-align: center;
+  }
+
+  /* ===== MAIN AREA ===== */
+  #main-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ===== PHONE FRAME (MOBILE) ===== */
+  #phone-frame {
+    position: relative;
+    width: 375px;
+    height: 812px;
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 0 0 8px #333, 0 0 0 10px #222, 0 25px 60px rgba(0,0,0,0.5);
+    background: #fff;
+    transform-origin: top center;
+  }
+  body.desktop-mode #phone-frame { display: none; }
+
+  /* ===== DESKTOP FRAME ===== */
+  #desktop-frame {
+    position: relative;
+    width: 1440px;
+    height: 900px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 0 4px #333, 0 25px 60px rgba(0,0,0,0.5);
+    background: #fff;
+    transform-origin: top center;
+    display: none;
+  }
+  body.desktop-mode #desktop-frame { display: block; }
+
+  /* ===== SCREENS ===== */
+  .screen {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 10;
+  }
+  .screen img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* ===== HOTSPOTS ===== */
+  .hotspot {
+    position: absolute;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
+    z-index: 20;
+  }
+  .hotspot:hover { background: rgba(249,115,22,0.08); }
+  .hotspot:active { background: rgba(249,115,22,0.18); }
+
+  /* ===== NAV BAR ===== */
+  #nav-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+    padding: 10px 20px;
+    background: #1a1a1a;
+    border-top: 1px solid #333;
+    flex-shrink: 0;
+  }
+  .nav-pill {
+    padding: 5px 10px;
+    border-radius: 16px;
+    border: 1px solid #444;
+    background: #222;
+    color: #999;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+  }
+  .nav-pill:hover { border-color: #F97316; color: #F97316; }
+  .nav-pill.active { background: #F97316; color: #fff; border-color: #F97316; }
+
+  /* ===== RESPONSIVE SCALING ===== */
+  @media (max-height: 950px) {
+    body:not(.desktop-mode) #phone-frame { transform: scale(0.88); }
+  }
+  @media (max-height: 820px) {
+    body:not(.desktop-mode) #phone-frame { transform: scale(0.75); }
+  }
+  body.desktop-mode #desktop-frame {
+    transform: scale(0.68);
+  }
+  @media (min-width: 1500px) {
+    body.desktop-mode #desktop-frame { transform: scale(0.78); }
+  }
+  @media (min-width: 1800px) {
+    body.desktop-mode #desktop-frame { transform: scale(0.88); }
+  }
+  @media (max-width: 1100px) {
+    body.desktop-mode #desktop-frame { transform: scale(0.55); }
+  }
+
+  /* Transition overlay */
+  .flash {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.04);
+    pointer-events: none;
+    z-index: 50;
+    animation: flash 0.3s ease-out;
+  }
+  @keyframes flash {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="top-bar">
+  <div class="brand">
+    <div class="logo">S</div>
+    <span>SplitSnap Prototype</span>
+  </div>
+  <span id="screen-name">Splash</span>
+  <div class="view-toggle">
+    <button class="active" onclick="setView('mobile')" id="btn-mobile">Vista movil</button>
+    <button onclick="setView('desktop')" id="btn-desktop">Vista desktop</button>
+  </div>
+</div>
+
+<!-- MAIN AREA -->
+<div id="main-area">
+
+  <!-- ==================== MOBILE SCREENS ==================== -->
+  <div id="phone-frame">
+
+    <!-- Splash -->
+    <div class="screen active" id="m-splash">
+      <img src="screens/iLzPt.png" alt="Splash">
+      <div class="hotspot" style="left:0;top:0;width:100%;height:100%" onclick="goTo('login')"></div>
+    </div>
+
+    <!-- Login -->
+    <div class="screen" id="m-login">
+      <img src="screens/BFG7I.png" alt="Login">
+      <div class="hotspot" style="left:6%;top:59%;width:88%;height:6.5%" onclick="goTo('dashboard')"></div>
+      <div class="hotspot" style="left:20%;top:68%;width:60%;height:3%" onclick="goTo('register')"></div>
+    </div>
+
+    <!-- Register -->
+    <div class="screen" id="m-register">
+      <img src="screens/8Hmqm.png" alt="Register">
+      <div class="hotspot" style="left:6%;top:67%;width:88%;height:6.5%" onclick="goTo('dashboard')"></div>
+      <div class="hotspot" style="left:20%;top:76%;width:60%;height:3%" onclick="goTo('login')"></div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="screen" id="m-dashboard">
+      <img src="screens/0d95S.png" alt="Dashboard">
+      <div class="hotspot" style="left:74%;top:1.5%;width:22%;height:5.5%" onclick="goTo('perfil')"></div>
+      <div class="hotspot" style="left:5%;top:42%;width:90%;height:9.5%" onclick="goTo('group-detail')"></div>
+      <div class="hotspot" style="left:5%;top:53%;width:90%;height:9.5%" onclick="goTo('group-detail')"></div>
+      <div class="hotspot" style="left:5%;top:64%;width:90%;height:9.5%" onclick="goTo('group-detail')"></div>
+      <div class="hotspot" style="left:79%;top:90%;width:16%;height:7.5%" onclick="goTo('crear-grupo')"></div>
+    </div>
+
+    <!-- Group Detail -->
+    <div class="screen" id="m-group-detail">
+      <img src="screens/lNwFu.png" alt="Group Detail">
+      <div class="hotspot" style="left:3%;top:3%;width:12%;height:5%" onclick="goTo('dashboard')"></div>
+      <div class="hotspot" style="left:5%;top:14%;width:90%;height:20.5%" onclick="goTo('debt-summary')"></div>
+      <div class="hotspot" style="left:5%;top:69.5%;width:43.5%;height:6%" onclick="goTo('add-expense')"></div>
+      <div class="hotspot" style="left:51%;top:69.5%;width:43.5%;height:6%" onclick="goTo('scan-receipt')"></div>
+    </div>
+
+    <!-- Add Expense -->
+    <div class="screen" id="m-add-expense">
+      <img src="screens/VNbA3.png" alt="Add Expense">
+      <div class="hotspot" style="left:3%;top:7%;width:12%;height:5%" onclick="goTo('group-detail')"></div>
+      <div class="hotspot" style="left:5%;top:88%;width:90%;height:7%" onclick="goTo('group-detail')"></div>
+    </div>
+
+    <!-- Scan Receipt -->
+    <div class="screen" id="m-scan-receipt">
+      <img src="screens/v7FYS.png" alt="Scan Receipt">
+      <div class="hotspot" style="left:3%;top:9%;width:12%;height:5%" onclick="goTo('group-detail')"></div>
+      <div class="hotspot" style="left:38%;top:76%;width:24%;height:9.5%" onclick="goTo('revisar-items')"></div>
+    </div>
+
+    <!-- Debt Summary -->
+    <div class="screen" id="m-debt-summary">
+      <img src="screens/nES2K.png" alt="Debt Summary">
+      <div class="hotspot" style="left:3%;top:7%;width:12%;height:5%" onclick="goTo('group-detail')"></div>
+    </div>
+
+    <!-- Crear Grupo -->
+    <div class="screen" id="m-crear-grupo">
+      <img src="screens/KCvAl.png" alt="Crear Grupo">
+      <div class="hotspot" style="left:3%;top:7%;width:12%;height:5%" onclick="goTo('dashboard')"></div>
+      <div class="hotspot" style="left:5%;top:90%;width:90%;height:6.5%" onclick="goTo('invitar-miembros')"></div>
+    </div>
+
+    <!-- Invitar Miembros -->
+    <div class="screen" id="m-invitar-miembros">
+      <img src="screens/gKXmG.png" alt="Invitar Miembros">
+      <div class="hotspot" style="left:2%;top:7%;width:12%;height:5%" onclick="goTo('crear-grupo')"></div>
+      <div class="hotspot" style="left:4%;top:90%;width:92%;height:6.5%" onclick="goTo('group-detail')"></div>
+    </div>
+
+    <!-- Revisar Items -->
+    <div class="screen" id="m-revisar-items">
+      <img src="screens/MeQLz.png" alt="Revisar Items">
+      <div class="hotspot" style="left:3%;top:7%;width:12%;height:5%" onclick="goTo('scan-receipt')"></div>
+      <div class="hotspot" style="left:5%;top:90%;width:90%;height:6.5%" onclick="goTo('group-detail')"></div>
+    </div>
+
+    <!-- Perfil -->
+    <div class="screen" id="m-perfil">
+      <img src="screens/v9nlt.png" alt="Perfil">
+      <div class="hotspot" style="left:3%;top:7%;width:12%;height:5%" onclick="goTo('dashboard')"></div>
+    </div>
+
+    <!-- Estado Vacio -->
+    <div class="screen" id="m-empty-state">
+      <img src="screens/SUaP7.png" alt="Estado Vacio">
+      <div class="hotspot" style="left:3%;top:7%;width:12%;height:5%" onclick="goTo('dashboard')"></div>
+      <div class="hotspot" style="left:10%;top:63%;width:80%;height:7%" onclick="goTo('crear-grupo')"></div>
+    </div>
+
+  </div>
+
+  <!-- ==================== DESKTOP SCREENS ==================== -->
+  <div id="desktop-frame">
+
+    <!-- D-Splash -->
+    <div class="screen active" id="d-splash">
+      <img src="screens/kr3lR.png" alt="Desktop Splash">
+      <div class="hotspot" style="left:0;top:0;width:100%;height:100%" onclick="goTo('login')"></div>
+    </div>
+
+    <!-- D-Login -->
+    <div class="screen" id="d-login">
+      <img src="screens/EVEFF.png" alt="Desktop Login">
+      <!-- Iniciar sesion button -->
+      <div class="hotspot" style="left:62.5%;top:59.9%;width:25%;height:4.9%" onclick="goTo('dashboard')"></div>
+      <!-- Registrate link -->
+      <div class="hotspot" style="left:67%;top:67%;width:14%;height:2.5%" onclick="goTo('register')"></div>
+    </div>
+
+    <!-- D-Register -->
+    <div class="screen" id="d-register">
+      <img src="screens/PgaHU.png" alt="Desktop Register">
+      <!-- Crear cuenta button -->
+      <div class="hotspot" style="left:62.5%;top:68.5%;width:25%;height:4.9%" onclick="goTo('dashboard')"></div>
+      <!-- Inicia sesion link -->
+      <div class="hotspot" style="left:67%;top:75%;width:14%;height:2.5%" onclick="goTo('login')"></div>
+    </div>
+
+    <!-- D-Dashboard -->
+    <div class="screen" id="d-dashboard">
+      <img src="screens/DHECE.png" alt="Desktop Dashboard">
+      <!-- Sidebar: Perfil nav -->
+      <div class="hotspot" style="left:1.1%;top:26.7%;width:15.8%;height:4.4%" onclick="goTo('perfil')"></div>
+      <!-- Sidebar: + Nuevo grupo -->
+      <div class="hotspot" style="left:1.1%;top:92.7%;width:15.8%;height:4.7%" onclick="goTo('crear-grupo')"></div>
+      <!-- Avatar top right -->
+      <div class="hotspot" style="left:92%;top:2.5%;width:6%;height:5%" onclick="goTo('perfil')"></div>
+      <!-- Group cards -->
+      <div class="hotspot" style="left:20.3%;top:31.9%;width:77.5%;height:18.1%" onclick="goTo('group-detail')"></div>
+      <div class="hotspot" style="left:20.3%;top:51.8%;width:77.5%;height:18.1%" onclick="goTo('group-detail')"></div>
+    </div>
+
+    <!-- D-Group Detail -->
+    <div class="screen" id="d-group-detail">
+      <img src="screens/3aOg3.png" alt="Desktop Group Detail">
+      <!-- Sidebar: Inicio -->
+      <div class="hotspot" style="left:1.1%;top:9.3%;width:15.8%;height:4.4%" onclick="goTo('dashboard')"></div>
+      <!-- Sidebar: + Nuevo grupo -->
+      <div class="hotspot" style="left:1.1%;top:92.7%;width:15.8%;height:4.7%" onclick="goTo('crear-grupo')"></div>
+      <!-- Back arrow -->
+      <div class="hotspot" style="left:18%;top:2.5%;width:3%;height:3.5%" onclick="goTo('dashboard')"></div>
+      <!-- Balance / member summary → debt summary -->
+      <div class="hotspot" style="left:20.3%;top:8.6%;width:37.9%;height:30.1%" onclick="goTo('debt-summary')"></div>
+      <!-- Agregar gasto -->
+      <div class="hotspot" style="left:72%;top:92.7%;width:12%;height:4.7%" onclick="goTo('add-expense')"></div>
+      <!-- Escanear recibo -->
+      <div class="hotspot" style="left:85%;top:92.7%;width:13%;height:4.7%" onclick="goTo('scan-receipt')"></div>
+    </div>
+
+    <!-- D-Add Expense -->
+    <div class="screen" id="d-add-expense">
+      <img src="screens/lfwUf.png" alt="Desktop Add Expense">
+      <!-- Sidebar: Inicio -->
+      <div class="hotspot" style="left:1.1%;top:9.3%;width:15.8%;height:4.4%" onclick="goTo('dashboard')"></div>
+      <!-- Sidebar: Mis grupos -->
+      <div class="hotspot" style="left:1.1%;top:14.2%;width:15.8%;height:4.4%" onclick="goTo('group-detail')"></div>
+      <!-- Guardar gasto button -->
+      <div class="hotspot" style="left:42%;top:76.9%;width:34%;height:5.2%" onclick="goTo('group-detail')"></div>
+    </div>
+
+    <!-- D-Scan Receipt -->
+    <div class="screen" id="d-scan-receipt">
+      <img src="screens/mvQy0.png" alt="Desktop Scan Receipt">
+      <!-- Sidebar: Inicio -->
+      <div class="hotspot" style="left:1.1%;top:9.3%;width:15.8%;height:4.4%" onclick="goTo('dashboard')"></div>
+      <!-- Upload area → revisar items -->
+      <div class="hotspot" style="left:41.7%;top:27.8%;width:34.7%;height:44.4%" onclick="goTo('revisar-items')"></div>
+    </div>
+
+    <!-- D-Debt Summary -->
+    <div class="screen" id="d-debt-summary">
+      <img src="screens/v1FEq.png" alt="Desktop Debt Summary">
+      <!-- Sidebar: Inicio -->
+      <div class="hotspot" style="left:1.1%;top:9.3%;width:15.8%;height:4.4%" onclick="goTo('dashboard')"></div>
+      <!-- Sidebar: Mis grupos -->
+      <div class="hotspot" style="left:1.1%;top:14.2%;width:15.8%;height:4.4%" onclick="goTo('group-detail')"></div>
+    </div>
+
+    <!-- D-Crear Grupo -->
+    <div class="screen" id="d-crear-grupo">
+      <img src="screens/mOfoI.png" alt="Desktop Crear Grupo">
+      <!-- Sidebar: Inicio -->
+      <div class="hotspot" style="left:1.1%;top:9.3%;width:15.8%;height:4.4%" onclick="goTo('dashboard')"></div>
+      <!-- Continuar button -->
+      <div class="hotspot" style="left:41.7%;top:69%;width:29.2%;height:5.2%" onclick="goTo('invitar-miembros')"></div>
+    </div>
+
+    <!-- D-Invitar Miembros -->
+    <div class="screen" id="d-invitar-miembros">
+      <img src="screens/uuPXb.png" alt="Desktop Invitar Miembros">
+      <!-- Sidebar: Inicio -->
+      <div class="hotspot" style="left:1.1%;top:9.3%;width:15.8%;height:4.4%" onclick="goTo('dashboard')"></div>
+      <!-- Crear grupo button -->
+      <div class="hotspot" style="left:38.3%;top:68.4%;width:36.7%;height:5.2%" onclick="goTo('group-detail')"></div>
+    </div>
+
+    <!-- D-Revisar Items -->
+    <div class="screen" id="d-revisar-items">
+      <img src="screens/u3ptj.png" alt="Desktop Revisar Items">
+      <!-- Sidebar: Inicio -->
+      <div class="hotspot" style="left:1.1%;top:9.3%;width:15.8%;height:4.4%" onclick="goTo('dashboard')"></div>
+      <!-- Confirmar y dividir (find in right panel or bottom) -->
+      <div class="hotspot" style="left:53.3%;top:90%;width:26.4%;height:5.5%" onclick="goTo('group-detail')"></div>
+    </div>
+
+    <!-- D-Perfil -->
+    <div class="screen" id="d-perfil">
+      <img src="screens/xqDTU.png" alt="Desktop Perfil">
+      <!-- Sidebar: Inicio -->
+      <div class="hotspot" style="left:1.1%;top:9.3%;width:15.8%;height:4.4%" onclick="goTo('dashboard')"></div>
+      <!-- Sidebar: Mis grupos -->
+      <div class="hotspot" style="left:1.1%;top:14.2%;width:15.8%;height:4.4%" onclick="goTo('group-detail')"></div>
+    </div>
+
+    <!-- D-Estado Vacio -->
+    <div class="screen" id="d-empty-state">
+      <img src="screens/b8ee5.png" alt="Desktop Estado Vacio">
+      <!-- Sidebar: + Nuevo grupo -->
+      <div class="hotspot" style="left:1.1%;top:92.7%;width:15.8%;height:4.7%" onclick="goTo('crear-grupo')"></div>
+      <!-- Crear mi primer grupo button -->
+      <div class="hotspot" style="left:40%;top:57%;width:20%;height:6%" onclick="goTo('crear-grupo')"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div id="nav-bar"></div>
+
+<script>
+const screens = [
+  { id: 'splash',           label: 'Splash' },
+  { id: 'login',            label: 'Login' },
+  { id: 'register',         label: 'Registro' },
+  { id: 'dashboard',        label: 'Dashboard' },
+  { id: 'group-detail',     label: 'Grupo' },
+  { id: 'add-expense',      label: 'Gasto' },
+  { id: 'scan-receipt',     label: 'Escanear' },
+  { id: 'debt-summary',     label: 'Deudas' },
+  { id: 'crear-grupo',      label: 'Crear grupo' },
+  { id: 'invitar-miembros', label: 'Invitar' },
+  { id: 'revisar-items',    label: 'Revisar' },
+  { id: 'perfil',           label: 'Perfil' },
+  { id: 'empty-state',      label: 'Vacio' },
+];
+
+let currentScreen = 'splash';
+let currentView = 'mobile'; // 'mobile' or 'desktop'
+
+// Build nav pills
+const navBar = document.getElementById('nav-bar');
+screens.forEach(s => {
+  const pill = document.createElement('button');
+  pill.className = 'nav-pill' + (s.id === 'splash' ? ' active' : '');
+  pill.textContent = s.label;
+  pill.dataset.screen = s.id;
+  pill.onclick = () => goTo(s.id);
+  navBar.appendChild(pill);
+});
+
+function goTo(screenId) {
+  if (screenId === currentScreen) return;
+
+  // Deactivate all screens in current frame
+  const prefix = currentView === 'mobile' ? 'm-' : 'd-';
+  const curEl = document.getElementById(prefix + currentScreen);
+  if (curEl) curEl.classList.remove('active');
+
+  // Activate new screen
+  const nextEl = document.getElementById(prefix + screenId);
+  if (nextEl) nextEl.classList.add('active');
+
+  currentScreen = screenId;
+
+  // Update pills
+  document.querySelectorAll('.nav-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.screen === screenId);
+  });
+
+  // Update label
+  const info = screens.find(s => s.id === screenId);
+  document.getElementById('screen-name').textContent = info ? info.label : screenId;
+}
+
+function setView(view) {
+  currentView = view;
+  document.body.classList.toggle('desktop-mode', view === 'desktop');
+  document.getElementById('btn-mobile').classList.toggle('active', view === 'mobile');
+  document.getElementById('btn-desktop').classList.toggle('active', view === 'desktop');
+
+  // Sync: deactivate all, activate current in new frame
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const prefix = view === 'mobile' ? 'm-' : 'd-';
+  const el = document.getElementById(prefix + currentScreen);
+  if (el) el.classList.add('active');
+}
+
+// Auto-advance splash
+setTimeout(() => {
+  if (currentScreen === 'splash') goTo('login');
+}, 2500);
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  const idx = screens.findIndex(s => s.id === currentScreen);
+  if (e.key === 'ArrowRight' && idx < screens.length - 1) goTo(screens[idx + 1].id);
+  if (e.key === 'ArrowLeft' && idx > 0) goTo(screens[idx - 1].id);
+  if (e.key === '1') setView('mobile');
+  if (e.key === '2') setView('desktop');
+});
+</script>
+
+</body>
+</html>
