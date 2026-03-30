@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SplitSnap - Prototype</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #111;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, sans-serif;
+    overflow: hidden;
+  }
+  #phone-frame {
+    position: relative;
+    width: 375px;
+    height: 812px;
+    border-radius: 40px;
+    overflow: hidden;
+    box-shadow: 0 0 0 8px #333, 0 20px 60px rgba(0,0,0,0.6);
+    background: #fff;
+  }
+  .screen {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 10;
+  }
+  .screen img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .hotspot {
+    position: absolute;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.15s;
+    /* Uncomment next line for debugging hotspots: */
+    /* background: rgba(249,115,22,0.15); */
+  }
+  .hotspot:hover {
+    background: rgba(249,115,22,0.08);
+  }
+  .hotspot:active {
+    background: rgba(249,115,22,0.18);
+  }
+  /* Back arrows - consistent style */
+  .hotspot.back-arrow {
+    border-radius: 50%;
+  }
+
+  /* Navigation bar */
+  #nav-bar {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    max-width: 500px;
+  }
+  .nav-pill {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid #444;
+    background: #222;
+    color: #aaa;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+  .nav-pill:hover { border-color: #F97316; color: #F97316; }
+  .nav-pill.active { background: #F97316; color: #fff; border-color: #F97316; }
+
+  /* Screen label */
+  #screen-label {
+    color: #888;
+    font-size: 12px;
+    margin-top: 12px;
+    letter-spacing: 0.5px;
+    font-family: 'Inter', sans-serif;
+  }
+
+  @media (max-height: 900px) {
+    #phone-frame { transform: scale(0.85); transform-origin: top center; }
+  }
+  @media (max-height: 750px) {
+    #phone-frame { transform: scale(0.7); transform-origin: top center; }
+  }
+</style>
+</head>
+<body>
+
+<div id="phone-frame">
+
+  <!-- Screen 0: Splash -->
+  <div class="screen active" id="screen-splash" data-name="Splash">
+    <img src="screens/iLzPt.png" alt="Splash">
+    <div class="hotspot" style="left:0;top:0;width:100%;height:100%"
+         onclick="goTo('login')"></div>
+  </div>
+
+  <!-- Screen 1: Login -->
+  <div class="screen" id="screen-login" data-name="Login">
+    <img src="screens/BFG7I.png" alt="Login">
+    <!-- Iniciar sesión button -->
+    <div class="hotspot" style="left:6.4%;top:59.5%;width:87.2%;height:6.5%"
+         onclick="goTo('dashboard')"></div>
+    <!-- Regístrate link -->
+    <div class="hotspot" style="left:20%;top:68%;width:60%;height:3%"
+         onclick="goTo('register')"></div>
+  </div>
+
+  <!-- Screen 2: Register -->
+  <div class="screen" id="screen-register" data-name="Registro">
+    <img src="screens/8Hmqm.png" alt="Register">
+    <!-- Crear cuenta button -->
+    <div class="hotspot" style="left:6.4%;top:67%;width:87.2%;height:6.5%"
+         onclick="goTo('dashboard')"></div>
+    <!-- Inicia sesión link -->
+    <div class="hotspot" style="left:20%;top:76%;width:60%;height:3%"
+         onclick="goTo('login')"></div>
+  </div>
+
+  <!-- Screen 3: Dashboard -->
+  <div class="screen" id="screen-dashboard" data-name="Dashboard">
+    <img src="screens/0d95S.png" alt="Dashboard">
+    <!-- Avatar → Perfil -->
+    <div class="hotspot back-arrow" style="left:74%;top:1.5%;width:22%;height:5.5%"
+         onclick="goTo('perfil')"></div>
+    <!-- Group 1 card -->
+    <div class="hotspot" style="left:5.3%;top:42.5%;width:89.3%;height:9.4%"
+         onclick="goTo('group-detail')"></div>
+    <!-- Group 2 card -->
+    <div class="hotspot" style="left:5.3%;top:53.3%;width:89.3%;height:9.4%"
+         onclick="goTo('group-detail')"></div>
+    <!-- Group 3 card -->
+    <div class="hotspot" style="left:5.3%;top:64.2%;width:89.3%;height:9.4%"
+         onclick="goTo('group-detail')"></div>
+    <!-- FAB + button -->
+    <div class="hotspot back-arrow" style="left:79%;top:90%;width:16%;height:7.5%"
+         onclick="goTo('crear-grupo')"></div>
+  </div>
+
+  <!-- Screen 4: Group Detail -->
+  <div class="screen" id="screen-group-detail" data-name="Detalle del grupo">
+    <img src="screens/lNwFu.png" alt="Group Detail">
+    <!-- Back arrow -->
+    <div class="hotspot back-arrow" style="left:3%;top:3%;width:12%;height:5%"
+         onclick="goTo('dashboard')"></div>
+    <!-- Balance card → Debt Summary -->
+    <div class="hotspot" style="left:5.3%;top:14%;width:89.3%;height:20.5%"
+         onclick="goTo('debt-summary')"></div>
+    <!-- Agregar gasto button -->
+    <div class="hotspot" style="left:5.3%;top:69.5%;width:43.5%;height:6%"
+         onclick="goTo('add-expense')"></div>
+    <!-- Escanear recibo button -->
+    <div class="hotspot" style="left:51%;top:69.5%;width:43.5%;height:6%"
+         onclick="goTo('scan-receipt')"></div>
+  </div>
+
+  <!-- Screen 5: Add Expense -->
+  <div class="screen" id="screen-add-expense" data-name="Agregar gasto">
+    <img src="screens/VNbA3.png" alt="Add Expense">
+    <!-- Back arrow -->
+    <div class="hotspot back-arrow" style="left:3%;top:7%;width:12%;height:5%"
+         onclick="goTo('group-detail')"></div>
+    <!-- Guardar gasto button (bottom) -->
+    <div class="hotspot" style="left:5%;top:88%;width:90%;height:7%"
+         onclick="goTo('group-detail')"></div>
+  </div>
+
+  <!-- Screen 6: Scan Receipt -->
+  <div class="screen" id="screen-scan-receipt" data-name="Escanear recibo">
+    <img src="screens/v7FYS.png" alt="Scan Receipt">
+    <!-- Back arrow -->
+    <div class="hotspot back-arrow" style="left:3%;top:9%;width:12%;height:5%"
+         onclick="goTo('group-detail')"></div>
+    <!-- Capture button -->
+    <div class="hotspot back-arrow" style="left:38%;top:76%;width:24%;height:9.5%"
+         onclick="goTo('revisar-items')"></div>
+  </div>
+
+  <!-- Screen 7: Debt Summary -->
+  <div class="screen" id="screen-debt-summary" data-name="Resumen de deudas">
+    <img src="screens/nES2K.png" alt="Debt Summary">
+    <!-- Back arrow -->
+    <div class="hotspot back-arrow" style="left:3%;top:7%;width:12%;height:5%"
+         onclick="goTo('group-detail')"></div>
+  </div>
+
+  <!-- Screen 8: Crear Grupo -->
+  <div class="screen" id="screen-crear-grupo" data-name="Crear grupo">
+    <img src="screens/KCvAl.png" alt="Crear Grupo">
+    <!-- Back arrow -->
+    <div class="hotspot back-arrow" style="left:3%;top:7%;width:12%;height:5%"
+         onclick="goTo('dashboard')"></div>
+    <!-- Continuar button -->
+    <div class="hotspot" style="left:5.3%;top:90%;width:89.3%;height:6.5%"
+         onclick="goTo('invitar-miembros')"></div>
+  </div>
+
+  <!-- Screen 9: Invitar Miembros -->
+  <div class="screen" id="screen-invitar-miembros" data-name="Invitar miembros">
+    <img src="screens/gKXmG.png" alt="Invitar Miembros">
+    <!-- Back arrow -->
+    <div class="hotspot back-arrow" style="left:2%;top:7%;width:12%;height:5%"
+         onclick="goTo('crear-grupo')"></div>
+    <!-- Crear grupo button -->
+    <div class="hotspot" style="left:4%;top:90%;width:92%;height:6.5%"
+         onclick="goTo('group-detail')"></div>
+  </div>
+
+  <!-- Screen 10: Revisar Items -->
+  <div class="screen" id="screen-revisar-items" data-name="Revisar recibo">
+    <img src="screens/MeQLz.png" alt="Revisar Items">
+    <!-- Back arrow -->
+    <div class="hotspot back-arrow" style="left:3%;top:7%;width:12%;height:5%"
+         onclick="goTo('scan-receipt')"></div>
+    <!-- Confirmar y dividir button -->
+    <div class="hotspot" style="left:5.3%;top:90%;width:89.3%;height:6.5%"
+         onclick="goTo('group-detail')"></div>
+  </div>
+
+  <!-- Screen 11: Perfil -->
+  <div class="screen" id="screen-perfil" data-name="Mi perfil">
+    <img src="screens/v9nlt.png" alt="Perfil">
+    <!-- Back arrow -->
+    <div class="hotspot back-arrow" style="left:3%;top:7%;width:12%;height:5%"
+         onclick="goTo('dashboard')"></div>
+  </div>
+
+  <!-- Screen 12: Estado Vacío -->
+  <div class="screen" id="screen-empty-state" data-name="Sin grupos">
+    <img src="screens/SUaP7.png" alt="Estado Vacío">
+    <!-- Back arrow -->
+    <div class="hotspot back-arrow" style="left:3%;top:7%;width:12%;height:5%"
+         onclick="goTo('dashboard')"></div>
+    <!-- Crear mi primer grupo button -->
+    <div class="hotspot" style="left:10%;top:63%;width:80%;height:7%"
+         onclick="goTo('crear-grupo')"></div>
+  </div>
+
+</div>
+
+<div id="nav-bar"></div>
+<div id="screen-label">Toca la pantalla para navegar</div>
+
+<script>
+const screens = [
+  { id: 'splash',           label: 'Splash' },
+  { id: 'login',            label: 'Login' },
+  { id: 'register',         label: 'Registro' },
+  { id: 'dashboard',        label: 'Dashboard' },
+  { id: 'group-detail',     label: 'Grupo' },
+  { id: 'add-expense',      label: 'Gasto' },
+  { id: 'scan-receipt',     label: 'Escanear' },
+  { id: 'debt-summary',     label: 'Deudas' },
+  { id: 'crear-grupo',      label: 'Crear grupo' },
+  { id: 'invitar-miembros', label: 'Invitar' },
+  { id: 'revisar-items',    label: 'Revisar' },
+  { id: 'perfil',           label: 'Perfil' },
+  { id: 'empty-state',      label: 'Vacío' },
+];
+
+let currentScreen = 'splash';
+
+// Build nav pills
+const navBar = document.getElementById('nav-bar');
+screens.forEach(s => {
+  const pill = document.createElement('button');
+  pill.className = 'nav-pill' + (s.id === 'splash' ? ' active' : '');
+  pill.textContent = s.label;
+  pill.dataset.screen = s.id;
+  pill.onclick = () => goTo(s.id);
+  navBar.appendChild(pill);
+});
+
+function goTo(screenId) {
+  if (screenId === currentScreen) return;
+  // Deactivate current
+  const cur = document.getElementById('screen-' + currentScreen);
+  if (cur) cur.classList.remove('active');
+  // Activate new
+  const next = document.getElementById('screen-' + screenId);
+  if (next) next.classList.add('active');
+  currentScreen = screenId;
+  // Update pills
+  document.querySelectorAll('.nav-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.screen === screenId);
+  });
+  // Update label
+  const screenData = screens.find(s => s.id === screenId);
+  document.getElementById('screen-label').textContent = screenData ? screenData.label : '';
+}
+
+// Auto-advance splash after 2 seconds
+setTimeout(() => {
+  if (currentScreen === 'splash') goTo('login');
+}, 2500);
+</script>
+
+</body>
+</html>
