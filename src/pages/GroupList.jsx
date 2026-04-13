@@ -1,67 +1,84 @@
 import { useNavigate } from 'react-router-dom'
 import { groups, expenses } from '../data'
-import { users } from '../data/global'
 import './GroupList.css'
 
 function GroupList() {
   const navigate = useNavigate()
 
-  const getGroupTotal = (groupId) => {
-    return expenses
+  const getGroupTotal = (groupId) =>
+    expenses
       .filter(e => e.groupId === groupId)
       .reduce((sum, e) => sum + e.amount, 0)
-  }
-
-  const getMemberCount = (memberIds) => memberIds.length
-
-  if (groups.length === 0) {
-    navigate('/empty')
-    return null
-  }
 
   return (
     <div className="group-list">
       <div className="group-list__header">
         <h1 className="group-list__title">Mis grupos</h1>
-        <button className="group-list__search-btn" aria-label="Buscar">
-          <span>🔍</span>
-        </button>
+        {groups.length > 0 && (
+          <button className="group-list__search-btn" aria-label="Buscar">🔍</button>
+        )}
       </div>
 
-      <div className="group-list__grid">
-        {groups.map(group => {
-          const total = getGroupTotal(group.id)
-          const memberCount = getMemberCount(group.memberIds)
+      {groups.length === 0 ? (
+        <div className="group-list__empty">
+          <div className="group-list__empty-icon">
+            <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+              <circle cx="36" cy="36" r="34" stroke="#F97316" strokeWidth="2" strokeDasharray="4 4" fill="#FFF7ED" />
+              <circle cx="26" cy="32" r="7" stroke="#F97316" strokeWidth="2" fill="none" />
+              <circle cx="46" cy="32" r="7" stroke="#F97316" strokeWidth="2" fill="none" />
+              <path d="M24 47 C24 42 48 42 48 47" stroke="#F97316" strokeWidth="2" fill="none" />
+              <circle cx="52" cy="52" r="9" fill="#F97316" />
+              <path d="M49 52h6M52 49v6" stroke="white" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </div>
+          <h2 className="group-list__empty-title">Aún no tienes grupos</h2>
+          <p className="group-list__empty-desc">
+            Crea tu primer grupo y empieza a dividir gastos fácilmente
+          </p>
+          <button
+            className="group-list__empty-cta"
+            onClick={() => navigate('/groups/new')}
+          >
+            + Crear mi primer grupo
+          </button>
+          <p className="group-list__empty-hint">
+            📷 Escanea recibos para dividir automáticamente
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="group-list__grid">
+            {groups.map(group => {
+              const total = getGroupTotal(group.id)
+              const memberCount = group.memberIds.length
+              return (
+                <div
+                  key={group.id}
+                  className="group-card"
+                  onClick={() => navigate(`/groups/${group.id}`)}
+                >
+                  <div className="group-card__icon">{group.emoji}</div>
+                  <div className="group-card__info">
+                    <h3 className="group-card__name">{group.name}</h3>
+                    <p className="group-card__members">{memberCount} miembros</p>
+                  </div>
+                  <span className="group-card__total">
+                    ${total.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
 
-          return (
-            <div
-              key={group.id}
-              className="group-card"
-              onClick={() => navigate(`/groups/${group.id}`)}
-            >
-              <div className="group-card__icon">
-                <span>{group.emoji}</span>
-              </div>
-              <div className="group-card__info">
-                <h3 className="group-card__name">{group.name}</h3>
-                <p className="group-card__members">{memberCount} miembros</p>
-              </div>
-              <div className="group-card__amount">
-                <span className="group-card__total">${total.toLocaleString('en-US', { minimumFractionDigits: 0 })}</span>
-                <span className="group-card__dot" />
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      <button
-        className="group-list__fab"
-        onClick={() => navigate('/groups/new')}
-        aria-label="Crear grupo"
-      >
-        +
-      </button>
+          <button
+            className="group-list__fab"
+            onClick={() => navigate('/groups/new')}
+            aria-label="Crear grupo"
+          >
+            +
+          </button>
+        </>
+      )}
     </div>
   )
 }
