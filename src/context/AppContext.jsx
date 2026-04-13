@@ -44,13 +44,14 @@ function reducer(state, action) {
 // ─── Helpers exportados para generar IDs únicos ────────────────────────────
 export const genId = (prefix = 'x') => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
 
-// Genera las deudas a partir de un gasto
+// Genera las deudas a partir de un gasto (incluye expenseId para trazabilidad)
 export function buildDebts(expense) {
   return expense.splitBetween
     .filter(split => split.userId !== expense.paidBy && split.amount > 0)
-    .map((split, idx) => ({
+    .map((split) => ({
       id: genId('d'),
       groupId: expense.groupId,
+      expenseId: expense.id,
       fromUserId: split.userId,
       toUserId: expense.paidBy,
       amount: parseFloat(split.amount.toFixed(2)),
