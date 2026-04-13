@@ -5,6 +5,7 @@
   flex-direction: column;
 }
 
+/* Header */
 .add-expense__header {
   display: flex;
   align-items: center;
@@ -24,10 +25,19 @@
   color: var(--color-text-primary);
 }
 
-/* Amount display */
-.add-expense__amount-display {
+/* Card: all form content */
+.add-expense__card {
+  flex: 1;
+  padding: 8px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Amount section */
+.add-expense__amount-section {
   text-align: center;
-  padding: 24px 16px 16px;
+  padding: 16px 0 8px;
 }
 
 .add-expense__amount-label {
@@ -36,36 +46,32 @@
   margin-bottom: 4px;
 }
 
+.add-expense__amount-box {
+  position: relative;
+  display: inline-block;
+}
+
 .add-expense__amount-value {
-  font-size: 48px;
+  font-size: 52px;
   font-weight: 800;
   color: var(--color-text-primary);
   line-height: 1;
+  pointer-events: none;
 }
 
-/* Form */
-.add-expense__form {
-  flex: 1;
-  padding: 0 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.add-expense__amount-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  cursor: text;
 }
 
+/* Fields */
 .add-expense__field {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.add-expense__field--row {
-  flex-direction: row;
-  align-items: center;
-}
-
-.add-expense__field-icon {
-  font-size: 18px;
-  margin-right: 8px;
 }
 
 .add-expense__label {
@@ -91,17 +97,45 @@
   background: var(--color-background);
 }
 
-.add-expense__input--date {
-  flex: 1;
-  background: transparent;
-  border: none;
-  font-size: var(--font-md);
+.add-expense__input::placeholder {
   color: var(--color-text-secondary);
-  height: auto;
-  padding: 0;
+  opacity: 0.6;
 }
 
-/* Members who paid */
+/* Date field */
+.add-expense__field--date {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.add-expense__date-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.add-expense__date-label {
+  font-size: var(--font-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  position: relative;
+  flex: 1;
+  text-align: right;
+}
+
+.add-expense__date-hidden {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+}
+
+/* Who paid */
 .add-expense__members {
   display: flex;
   gap: 10px;
@@ -112,7 +146,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: 6px 14px 6px 6px;
   border-radius: var(--radius-full);
   border: 2px solid var(--color-border);
   background: var(--color-bg-light);
@@ -124,23 +158,37 @@
 
 .add-expense__member-btn.active {
   color: white;
+  font-weight: 600;
+}
+
+.add-expense__member-initial {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 /* Split toggle */
 .add-expense__split-toggle {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 .add-expense__split-btn {
-  flex: 1;
-  height: 40px;
+  height: 44px;
   background: transparent;
   font-size: var(--font-md);
   color: var(--color-text-secondary);
   transition: all 0.15s;
+  font-weight: 500;
 }
 
 .add-expense__split-btn.active {
@@ -149,35 +197,7 @@
   font-weight: 600;
 }
 
-/* Categories */
-.add-expense__categories {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.add-expense__cat-btn {
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--color-border);
-  background: var(--color-background);
-  font-size: var(--font-sm);
-  color: var(--color-text-primary);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.add-expense__cat-btn.active {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-}
-
-/* Footer */
-.add-expense__footer {
-  padding: 16px;
-}
-
+/* Submit */
 .add-expense__submit {
   width: 100%;
   height: 52px;
@@ -186,6 +206,7 @@
   border-radius: var(--radius-md);
   font-size: var(--font-lg);
   font-weight: 600;
+  margin-top: auto;
   transition: opacity 0.15s;
 }
 
@@ -198,33 +219,29 @@
   opacity: 0.9;
 }
 
-/* Desktop */
+/* ─── Desktop ─── */
 @media (min-width: 768px) {
   .add-expense {
     background: var(--color-bg-light);
-    padding: 32px 40px;
+    min-height: 100vh;
   }
 
   .add-expense__header {
-    padding: 0;
-    margin-bottom: 24px;
+    padding: 32px 40px 0;
   }
 
-  .add-expense__amount-display {
-    text-align: left;
-    padding: 0 0 24px;
-  }
-
-  .add-expense__form {
-    max-width: 560px;
+  .add-expense__card {
+    width: 100%;
+    max-width: 520px;
+    margin: 24px auto 0;
     background: var(--color-background);
     border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
     padding: 32px;
-    box-shadow: var(--shadow-sm);
+    gap: 20px;
   }
 
-  .add-expense__footer {
-    max-width: 560px;
-    padding: 24px 0;
+  .add-expense__amount-section {
+    padding: 0 0 8px;
   }
 }

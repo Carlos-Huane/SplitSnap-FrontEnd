@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { groups } from '../data/groups'
-import { users, currentUser, categories } from '../data/global'
+import { users, currentUser } from '../data/global'
 import './AddExpense.css'
 
 function AddExpense() {
@@ -16,7 +16,6 @@ function AddExpense() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [paidBy, setPaidBy] = useState(currentUser.id)
   const [splitMode, setSplitMode] = useState('equal')
-  const [category, setCategory] = useState(categories[0].name)
 
   const displayAmount = amount ? parseFloat(amount).toFixed(2) : '0.00'
 
@@ -28,6 +27,11 @@ function AddExpense() {
   const avatarColors = ['#F97316', '#3B82F6', '#22C55E', '#8B5CF6', '#EF4444']
   const getInitial = (name) => name?.charAt(0).toUpperCase() || '?'
 
+  const formatDateDisplay = (d) => {
+    const date = new Date(d + 'T00:00:00')
+    return date.toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+  }
+
   return (
     <div className="add-expense">
       <div className="add-expense__header">
@@ -35,26 +39,25 @@ function AddExpense() {
         <h1 className="add-expense__title">Nuevo gasto</h1>
       </div>
 
-      <div className="add-expense__amount-display">
-        <p className="add-expense__amount-label">Monto</p>
-        <p className="add-expense__amount-value">
-          ${displayAmount}
-        </p>
-      </div>
-
-      <div className="add-expense__form">
-        <div className="add-expense__field">
-          <input
-            className="add-expense__input"
-            type="number"
-            placeholder="Monto (S/. o $)"
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            min="0"
-            step="0.01"
-          />
+      <div className="add-expense__card">
+        {/* Monto display */}
+        <div className="add-expense__amount-section">
+          <p className="add-expense__amount-label">Monto</p>
+          <div className="add-expense__amount-box">
+            <p className="add-expense__amount-value">${displayAmount}</p>
+            <input
+              className="add-expense__amount-input"
+              type="number"
+              placeholder="0.00"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              min="0"
+              step="0.01"
+            />
+          </div>
         </div>
 
+        {/* Descripción */}
         <div className="add-expense__field">
           <input
             className="add-expense__input"
@@ -65,38 +68,47 @@ function AddExpense() {
           />
         </div>
 
-        <div className="add-expense__field add-expense__field--row">
-          <span className="add-expense__field-icon">📅</span>
-          <input
-            className="add-expense__input add-expense__input--date"
-            type="date"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-          />
+        {/* Fecha */}
+        <div className="add-expense__field add-expense__field--date">
+          <span className="add-expense__date-icon">📅</span>
+          <label className="add-expense__date-label">
+            {formatDateDisplay(date)}
+            <input
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              className="add-expense__date-hidden"
+            />
+          </label>
         </div>
 
+        {/* Quién pagó */}
         <div className="add-expense__field">
           <label className="add-expense__label">¿Quién pagó?</label>
           <div className="add-expense__members">
             {members.map((member, idx) => {
               if (!member) return null
+              const active = paidBy === member.id
               return (
                 <button
                   key={member.id}
-                  className={`add-expense__member-btn ${paidBy === member.id ? 'active' : ''}`}
+                  className={`add-expense__member-btn ${active ? 'active' : ''}`}
                   onClick={() => setPaidBy(member.id)}
-                  style={paidBy === member.id
-                    ? { background: avatarColors[idx % avatarColors.length], borderColor: avatarColors[idx % avatarColors.length] }
-                    : {}}
+                  style={active ? { background: avatarColors[idx % avatarColors.length], borderColor: avatarColors[idx % avatarColors.length] } : {}}
                 >
-                  {getInitial(member.name)}
-                  <span>{member.id === currentUser.id ? 'Tú' : member.name.split(' ')[0]}</span>
+                  <span className="add-expense__member-initial"
+                    style={{ background: active ? 'rgba(255,255,255,0.3)' : avatarColors[idx % avatarColors.length] }}
+                  >
+                    {getInitial(member.name)}
+                  </span>
+                  {member.id === currentUser.id ? 'Tú' : member.name.split(' ')[0]}
                 </button>
               )
             })}
           </div>
         </div>
 
+        {/* Dividir gasto */}
         <div className="add-expense__field">
           <label className="add-expense__label">Dividir gasto</label>
           <div className="add-expense__split-toggle">
@@ -115,23 +127,6 @@ function AddExpense() {
           </div>
         </div>
 
-        <div className="add-expense__field">
-          <label className="add-expense__label">Categoría</label>
-          <div className="add-expense__categories">
-            {categories.map(cat => (
-              <button
-                key={cat.id}
-                className={`add-expense__cat-btn ${category === cat.name ? 'active' : ''}`}
-                onClick={() => setCategory(cat.name)}
-              >
-                {cat.emoji} {cat.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="add-expense__footer">
         <button
           className="add-expense__submit"
           onClick={handleSave}
