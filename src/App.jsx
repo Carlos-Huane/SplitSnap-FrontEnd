@@ -4,6 +4,7 @@ import Splash from './pages/Splash'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import GroupList from './pages/GroupList'
 import GroupDetail from './pages/GroupDetail'
 import CreateGroup from './pages/CreateGroup'
 import InviteMembers from './pages/InviteMembers'
@@ -31,6 +32,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/groups" element={<GroupList />} />
           <Route path="/groups/new" element={<CreateGroup />} />
           <Route path="/groups/:id" element={<GroupDetail />} />
           <Route path="/groups/:id/invite" element={<InviteMembers />} />
