@@ -1,0 +1,262 @@
+.debt-summary {
+  min-height: 100vh;
+  background: var(--color-bg-light);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 32px;
+}
+
+.debt-summary__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-background);
+}
+
+.debt-summary__back {
+  background: transparent;
+  font-size: 20px;
+  color: var(--color-text-primary);
+}
+
+.debt-summary__title {
+  font-size: var(--font-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* Balance Card */
+.debt-summary__balance-card {
+  margin: 16px;
+  padding: 24px;
+  background: var(--color-primary);
+  border-radius: var(--radius-lg);
+  color: white;
+}
+
+.debt-summary__balance-label {
+  font-size: var(--font-sm);
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
+
+.debt-summary__balance-amount {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.debt-summary__group-name {
+  font-size: var(--font-md);
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.debt-summary__member-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  background: rgba(255,255,255,0.2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-sm);
+}
+
+/* Sections */
+.debt-summary__section {
+  padding: 0 16px;
+  margin-bottom: 8px;
+}
+
+.debt-summary__section-title {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 12px;
+  margin-top: 16px;
+}
+
+.debt-summary__debts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Debt Card */
+.debt-card {
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.debt-card--paid {
+  opacity: 0.75;
+}
+
+.debt-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.debt-card__users {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.debt-card__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+.debt-card__avatar--paid {
+  filter: grayscale(0.4);
+}
+
+.debt-card__arrow {
+  font-size: var(--font-md);
+  color: var(--color-text-secondary);
+}
+
+.debt-card__names {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.debt-card__names--paid {
+  color: var(--color-text-secondary);
+}
+
+.debt-card__amount {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.debt-card__amount--paid {
+  color: var(--color-success);
+}
+
+.debt-card__paid-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.debt-card__paid-label {
+  font-size: var(--font-sm);
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+/* Action buttons */
+.debt-card__actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.debt-card__pay-btn {
+  flex: 1;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: white;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.debt-card__pay-btn:hover {
+  opacity: 0.9;
+}
+
+.debt-card__mark-paid {
+  width: 100%;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-sm);
+  text-align: center;
+  padding: 4px;
+}
+
+.debt-card__mark-paid:hover {
+  color: var(--color-primary);
+}
+
+.debt-card__paid-check {
+  color: var(--color-success);
+  font-size: var(--font-sm);
+  text-align: center;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+/* All paid */
+.debt-summary__all-paid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 16px;
+  font-size: 40px;
+  text-align: center;
+}
+
+.debt-summary__all-paid p {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+/* Desktop */
+@media (min-width: 768px) {
+  .debt-summary {
+    padding: 32px 40px;
+  }
+
+  .debt-summary__header {
+    background: transparent;
+    padding: 0;
+    margin-bottom: 24px;
+  }
+
+  .debt-summary__balance-card {
+    margin: 0 0 24px;
+    max-width: 640px;
+  }
+
+  .debt-summary__section {
+    padding: 0;
+    max-width: 640px;
+  }
+
+  .debt-summary__debts {
+    gap: 16px;
+  }
+
+  .debt-card {
+    padding: 20px;
+  }
+
+  .debt-card__actions {
+    gap: 12px;
+  }
+
+  .debt-card__pay-btn {
+    height: 44px;
+    font-size: var(--font-md);
+  }
+}
