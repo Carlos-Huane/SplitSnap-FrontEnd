@@ -52,95 +52,98 @@ function DebtSummary() {
         <span className="debt-summary__member-badge">{memberCount} miembros</span>
       </div>
 
-      {/* Pending debts */}
-      {pendingDebts.length > 0 && (
-        <section className="debt-summary__section">
-          <h2 className="debt-summary__section-title">Deudas pendientes</h2>
-          <div className="debt-summary__debts">
-            {pendingDebts.map(debt => (
-              <div key={debt.id} className="debt-card">
-                <div className="debt-card__row">
-                  <div className="debt-card__users">
-                    <div
-                      className="debt-card__avatar"
-                      style={{ background: avatarColors[debt.fromUserId] || '#888' }}
-                    >
-                      {getInitial(debt.fromUserId)}
+      {/* Two-column layout on desktop */}
+      <div className="debt-summary__columns">
+        {/* Pending debts */}
+        {pendingDebts.length > 0 && (
+          <section className="debt-summary__section">
+            <h2 className="debt-summary__section-title">Deudas pendientes</h2>
+            <div className="debt-summary__debts">
+              {pendingDebts.map(debt => (
+                <div key={debt.id} className="debt-card">
+                  <div className="debt-card__row">
+                    <div className="debt-card__users">
+                      <div
+                        className="debt-card__avatar"
+                        style={{ background: avatarColors[debt.fromUserId] || '#888' }}
+                      >
+                        {getInitial(debt.fromUserId)}
+                      </div>
+                      <span className="debt-card__arrow">→</span>
+                      <div
+                        className="debt-card__avatar"
+                        style={{ background: avatarColors[debt.toUserId] || '#888' }}
+                      >
+                        {getInitial(debt.toUserId)}
+                      </div>
+                      <span className="debt-card__names">
+                        {getName(debt.fromUserId)} → {getName(debt.toUserId)}
+                      </span>
                     </div>
-                    <span className="debt-card__arrow">→</span>
-                    <div
-                      className="debt-card__avatar"
-                      style={{ background: avatarColors[debt.toUserId] || '#888' }}
-                    >
-                      {getInitial(debt.toUserId)}
-                    </div>
-                    <span className="debt-card__names">
-                      {getName(debt.fromUserId)} → {getName(debt.toUserId)}
-                    </span>
+                    <span className="debt-card__amount">${debt.amount.toFixed(2)}</span>
                   </div>
-                  <span className="debt-card__amount">${debt.amount.toFixed(2)}</span>
-                </div>
 
-                <div className="debt-card__actions">
-                  <button className="debt-card__pay-btn debt-card__pay-btn--paypal">
-                    💳 PayPal
+                  <div className="debt-card__actions">
+                    <button className="debt-card__pay-btn debt-card__pay-btn--paypal">
+                      💳 PayPal
+                    </button>
+                    <button className="debt-card__pay-btn debt-card__pay-btn--venmo">
+                      📲 Venmo
+                    </button>
+                  </div>
+
+                  <button
+                    className="debt-card__mark-paid"
+                    onClick={() => markAsPaid(debt.id)}
+                  >
+                    ☑ Marcar como pagado
                   </button>
-                  <button className="debt-card__pay-btn debt-card__pay-btn--venmo">
-                    📲 Venmo
-                  </button>
                 </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-                <button
-                  className="debt-card__mark-paid"
-                  onClick={() => markAsPaid(debt.id)}
-                >
-                  ☑ Marcar como pagado
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Paid debts */}
-      {paidDebts.length > 0 && (
-        <section className="debt-summary__section">
-          <h2 className="debt-summary__section-title">Deudas saldadas</h2>
-          <div className="debt-summary__debts">
-            {paidDebts.map(debt => (
-              <div key={debt.id} className="debt-card debt-card--paid">
-                <div className="debt-card__row">
-                  <div className="debt-card__users">
-                    <div
-                      className="debt-card__avatar debt-card__avatar--paid"
-                      style={{ background: avatarColors[debt.fromUserId] || '#888' }}
-                    >
-                      {getInitial(debt.fromUserId)}
+        {/* Paid debts */}
+        {paidDebts.length > 0 && (
+          <section className="debt-summary__section">
+            <h2 className="debt-summary__section-title">Deudas saldadas</h2>
+            <div className="debt-summary__debts">
+              {paidDebts.map(debt => (
+                <div key={debt.id} className="debt-card debt-card--paid">
+                  <div className="debt-card__row">
+                    <div className="debt-card__users">
+                      <div
+                        className="debt-card__avatar debt-card__avatar--paid"
+                        style={{ background: avatarColors[debt.fromUserId] || '#888' }}
+                      >
+                        {getInitial(debt.fromUserId)}
+                      </div>
+                      <span className="debt-card__arrow">→</span>
+                      <div
+                        className="debt-card__avatar debt-card__avatar--paid"
+                        style={{ background: avatarColors[debt.toUserId] || '#888' }}
+                      >
+                        {getInitial(debt.toUserId)}
+                      </div>
+                      <span className="debt-card__names debt-card__names--paid">
+                        {getName(debt.fromUserId)} → {getName(debt.toUserId)}
+                      </span>
                     </div>
-                    <span className="debt-card__arrow">→</span>
-                    <div
-                      className="debt-card__avatar debt-card__avatar--paid"
-                      style={{ background: avatarColors[debt.toUserId] || '#888' }}
-                    >
-                      {getInitial(debt.toUserId)}
+                    <div className="debt-card__paid-badge">
+                      <span className="debt-card__amount debt-card__amount--paid">
+                        ${debt.amount.toFixed(2)}
+                      </span>
+                      <span className="debt-card__paid-label">Pagado</span>
                     </div>
-                    <span className="debt-card__names debt-card__names--paid">
-                      {getName(debt.fromUserId)} → {getName(debt.toUserId)}
-                    </span>
                   </div>
-                  <div className="debt-card__paid-badge">
-                    <span className="debt-card__amount debt-card__amount--paid">
-                      ${debt.amount.toFixed(2)}
-                    </span>
-                    <span className="debt-card__paid-label">Pagado</span>
-                  </div>
+                  <p className="debt-card__paid-check">✓ Deuda saldada</p>
                 </div>
-                <p className="debt-card__paid-check">✓ Deuda saldada</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
 
       {pendingDebts.length === 0 && paidDebts.length > 0 && (
         <div className="debt-summary__all-paid">
