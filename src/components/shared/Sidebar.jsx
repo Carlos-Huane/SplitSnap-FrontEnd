@@ -34,9 +34,9 @@ function Sidebar() {
         ))}
       </nav>
 
-      <button className="sidebar__new-group" onClick={() => navigate('/groups/new')}>
-        <span>+</span>
-        <span>Nuevo grupo</span>
+      <button className="sidebar__logout" onClick={() => navigate('/login')}>
+        <span className="sidebar__logout-icon">🚪</span>
+        <span>Cerrar sesión</span>
       </button>
     </aside>
   )
