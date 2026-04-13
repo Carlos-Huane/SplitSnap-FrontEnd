@@ -1,0 +1,230 @@
+.add-expense {
+  min-height: 100vh;
+  background: var(--color-background);
+  display: flex;
+  flex-direction: column;
+}
+
+.add-expense__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.add-expense__back {
+  background: transparent;
+  font-size: 20px;
+  color: var(--color-text-primary);
+}
+
+.add-expense__title {
+  font-size: var(--font-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* Amount display */
+.add-expense__amount-display {
+  text-align: center;
+  padding: 24px 16px 16px;
+}
+
+.add-expense__amount-label {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.add-expense__amount-value {
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+/* Form */
+.add-expense__form {
+  flex: 1;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.add-expense__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.add-expense__field--row {
+  flex-direction: row;
+  align-items: center;
+}
+
+.add-expense__field-icon {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.add-expense__label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.add-expense__input {
+  height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-lg);
+  color: var(--color-text-primary);
+  background: var(--color-bg-light);
+  width: 100%;
+}
+
+.add-expense__input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  background: var(--color-background);
+}
+
+.add-expense__input--date {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-size: var(--font-md);
+  color: var(--color-text-secondary);
+  height: auto;
+  padding: 0;
+}
+
+/* Members who paid */
+.add-expense__members {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.add-expense__member-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  background: var(--color-bg-light);
+  font-size: var(--font-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.add-expense__member-btn.active {
+  color: white;
+}
+
+/* Split toggle */
+.add-expense__split-toggle {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.add-expense__split-btn {
+  flex: 1;
+  height: 40px;
+  background: transparent;
+  font-size: var(--font-md);
+  color: var(--color-text-secondary);
+  transition: all 0.15s;
+}
+
+.add-expense__split-btn.active {
+  background: var(--color-bg-light);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+/* Categories */
+.add-expense__categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.add-expense__cat-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  font-size: var(--font-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.add-expense__cat-btn.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* Footer */
+.add-expense__footer {
+  padding: 16px;
+}
+
+.add-expense__submit {
+  width: 100%;
+  height: 52px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-md);
+  font-size: var(--font-lg);
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.add-expense__submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.add-expense__submit:not(:disabled):hover {
+  opacity: 0.9;
+}
+
+/* Desktop */
+@media (min-width: 768px) {
+  .add-expense {
+    background: var(--color-bg-light);
+    padding: 32px 40px;
+  }
+
+  .add-expense__header {
+    padding: 0;
+    margin-bottom: 24px;
+  }
+
+  .add-expense__amount-display {
+    text-align: left;
+    padding: 0 0 24px;
+  }
+
+  .add-expense__form {
+    max-width: 560px;
+    background: var(--color-background);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .add-expense__footer {
+    max-width: 560px;
+    padding: 24px 0;
+  }
+}
