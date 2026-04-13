@@ -1,0 +1,250 @@
+.group-detail {
+  min-height: 100vh;
+  background: var(--color-bg-light);
+  display: flex;
+  flex-direction: column;
+}
+
+.group-detail__not-found {
+  padding: 40px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+/* Header */
+.group-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.group-detail__back {
+  background: transparent;
+  font-size: 20px;
+  color: var(--color-text-primary);
+  padding: 4px;
+}
+
+.group-detail__title {
+  flex: 1;
+  font-size: var(--font-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-detail__invite {
+  background: transparent;
+  font-size: 18px;
+  padding: 4px;
+}
+
+/* Content */
+.group-detail__content {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.group-detail__section {
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.group-detail__section-title {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 11px;
+}
+
+/* Balance rows */
+.group-detail__balances {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.balance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.balance-row__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.balance-row__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+.balance-row__name {
+  font-size: var(--font-md);
+  color: var(--color-text-primary);
+}
+
+.balance-row__amount {
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+
+.balance-row__amount.positive { color: var(--color-success); }
+.balance-row__amount.negative { color: var(--color-danger); }
+
+/* Expenses */
+.group-detail__expenses {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.group-detail__empty-expenses {
+  color: var(--color-text-secondary);
+  font-size: var(--font-md);
+  text-align: center;
+  padding: 16px 0;
+}
+
+.expense-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.expense-row:last-child {
+  border-bottom: none;
+}
+
+.expense-row__desc {
+  font-size: var(--font-md);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.expense-row__meta {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.expense-row__amount {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* Actions */
+.group-detail__actions {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--color-background);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.group-detail__btn {
+  flex: 1;
+  height: 48px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.group-detail__btn:hover { opacity: 0.9; }
+
+.group-detail__btn--primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.group-detail__btn--secondary {
+  background: var(--color-bg-light);
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+}
+
+/* Debts link */
+.group-detail__debts-link {
+  text-align: center;
+  padding: 12px 16px 20px;
+  background: var(--color-background);
+}
+
+.group-detail__debts-link button {
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-md);
+  font-weight: 500;
+}
+
+/* Desktop */
+@media (min-width: 768px) {
+  .group-detail {
+    padding: 32px 40px;
+    background: var(--color-bg-light);
+  }
+
+  .group-detail__header {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-bottom: 24px;
+  }
+
+  .group-detail__content {
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 0;
+    gap: 24px;
+  }
+
+  .group-detail__section {
+    flex: 1;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .group-detail__actions {
+    position: static;
+    background: transparent;
+    border: none;
+    padding: 24px 0 0;
+    max-width: 480px;
+  }
+
+  .group-detail__btn {
+    height: 52px;
+    font-size: var(--font-lg);
+  }
+
+  .group-detail__debts-link {
+    background: transparent;
+    padding: 8px 0 0;
+    text-align: left;
+  }
+}
