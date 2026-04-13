@@ -158,22 +158,60 @@
   color: var(--color-text-primary);
 }
 
-/* Actions */
+/* Debts banner */
+.group-detail__debts-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #FFF7ED;
+  border-top: 1px solid #FED7AA;
+  border-bottom: 1px solid #FED7AA;
+}
+
+.group-detail__debts-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-detail__debts-icon { font-size: 18px; }
+
+.group-detail__debts-text {
+  font-size: var(--font-md);
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.group-detail__debts-btn {
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-primary);
+  white-space: nowrap;
+}
+
+/* Actions — alineadas a la derecha */
 .group-detail__actions {
   display: flex;
   gap: 12px;
   padding: 12px 16px;
   background: var(--color-background);
   border-top: 1px solid var(--color-border-light);
+  justify-content: flex-end;
 }
 
 .group-detail__btn {
-  flex: 1;
   height: 48px;
+  padding: 0 20px;
   border-radius: var(--radius-md);
   font-size: var(--font-md);
   font-weight: 600;
   transition: opacity 0.15s;
+  white-space: nowrap;
 }
 
 .group-detail__btn:hover { opacity: 0.9; }
@@ -187,20 +225,6 @@
   background: var(--color-bg-light);
   color: var(--color-primary);
   border: 1.5px solid var(--color-primary);
-}
-
-/* Debts link */
-.group-detail__debts-link {
-  text-align: center;
-  padding: 12px 16px 20px;
-  background: var(--color-background);
-}
-
-.group-detail__debts-link button {
-  background: transparent;
-  color: var(--color-primary);
-  font-size: var(--font-md);
-  font-weight: 500;
 }
 
 /* Desktop */
@@ -229,22 +253,22 @@
     box-shadow: var(--shadow-sm);
   }
 
+  .group-detail__debts-banner {
+    margin: 0 0 0 0;
+    border-radius: 0;
+  }
+
   .group-detail__actions {
     position: static;
     background: transparent;
     border: none;
     padding: 24px 0 0;
-    max-width: 480px;
+    justify-content: flex-end;
   }
 
   .group-detail__btn {
     height: 52px;
     font-size: var(--font-lg);
-  }
-
-  .group-detail__debts-link {
-    background: transparent;
-    padding: 8px 0 0;
-    text-align: left;
+    flex: 0 0 auto;
   }
 }

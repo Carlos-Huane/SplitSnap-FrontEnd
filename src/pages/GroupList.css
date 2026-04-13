@@ -19,13 +19,20 @@
   color: var(--color-text-primary);
 }
 
-.group-list__search-btn {
-  width: 40px;
+.group-list__new-btn {
+  display: none; /* visible solo en desktop */
+  padding: 8px 18px;
   height: 40px;
+  background: var(--color-primary);
+  color: white;
   border-radius: var(--radius-full);
-  background: transparent;
-  font-size: 18px;
+  font-size: var(--font-md);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: opacity 0.15s;
 }
+
+.group-list__new-btn:hover { opacity: 0.9; }
 
 /* Empty State */
 .group-list__empty {
@@ -186,6 +193,11 @@
 
   .group-list__fab {
     display: none;
+  }
+
+  .group-list__new-btn {
+    display: flex;
+    align-items: center;
   }
 
   .group-list__empty {

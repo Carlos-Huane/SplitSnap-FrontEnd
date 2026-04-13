@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom'
-import { groups, expenses } from '../data'
+import { useApp } from '../context/AppContext'
 import './GroupList.css'
 
 function GroupList() {
   const navigate = useNavigate()
+  const { groups, expenses } = useApp()
 
   const getGroupTotal = (groupId) =>
     expenses
@@ -14,9 +15,12 @@ function GroupList() {
     <div className="group-list">
       <div className="group-list__header">
         <h1 className="group-list__title">Mis grupos</h1>
-        {groups.length > 0 && (
-          <button className="group-list__search-btn" aria-label="Buscar">🔍</button>
-        )}
+        <button
+          className="group-list__new-btn"
+          onClick={() => navigate('/groups/new')}
+        >
+          + Nuevo grupo
+        </button>
       </div>
 
       {groups.length === 0 ? (
@@ -60,7 +64,7 @@ function GroupList() {
                   <div className="group-card__icon">{group.emoji}</div>
                   <div className="group-card__info">
                     <h3 className="group-card__name">{group.name}</h3>
-                    <p className="group-card__members">{memberCount} miembros</p>
+                    <p className="group-card__members">{memberCount} miembro{memberCount !== 1 ? 's' : ''}</p>
                   </div>
                   <span className="group-card__total">
                     ${total.toLocaleString('en-US', { minimumFractionDigits: 0 })}

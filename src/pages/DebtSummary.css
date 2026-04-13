@@ -6,6 +6,29 @@
   padding-bottom: 32px;
 }
 
+/* Toast */
+.debt-summary__toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1F2937;
+  color: white;
+  padding: 12px 24px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-md);
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: var(--shadow-md);
+  animation: toastIn 0.2s ease;
+  white-space: nowrap;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 /* Header */
 .debt-summary__header {
   display: flex;

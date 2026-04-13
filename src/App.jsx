@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
+import { AppProvider } from './context/AppContext'
 import Sidebar from './components/shared/Sidebar'
 import Splash from './pages/Splash'
 import Login from './pages/Login'
@@ -19,7 +20,7 @@ import './App.css'
 
 const noSidebarRoutes = ['/', '/login', '/register']
 
-function App() {
+function AppRoutes() {
   const location = useLocation()
   const showSidebar = !noSidebarRoutes.includes(location.pathname)
 
@@ -46,6 +47,14 @@ function App() {
         </Routes>
       </main>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <AppProvider>
+      <AppRoutes />
+    </AppProvider>
   )
 }
 

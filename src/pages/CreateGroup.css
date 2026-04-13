@@ -173,6 +173,7 @@
 
   .create-group__form {
     max-width: 520px;
+    margin: 0 auto;
     background: var(--color-background);
     border-radius: var(--radius-lg);
     padding: 32px;
@@ -181,6 +182,7 @@
 
   .create-group__footer {
     max-width: 520px;
+    margin: 0 auto;
     padding: 24px 0;
   }
 }

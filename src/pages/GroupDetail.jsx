@@ -1,30 +1,45 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { groups, expenses, debts } from '../data/groups'
+import { useApp } from '../context/AppContext'
 import { users, currentUser } from '../data/global'
 import './GroupDetail.css'
 
 function GroupDetail() {
   const navigate = useNavigate()
   const { id } = useParams()
+  const { groups, expenses, debts } = useApp()
 
   const group = groups.find(g => g.id === id)
-  if (!group) return <div className="group-detail__not-found">Grupo no encontrado</div>
+  if (!group) {
+    return (
+      <div className="group-detail__not-found">
+        Grupo no encontrado.{' '}
+        <button onClick={() => navigate('/groups')} style={{ color: 'var(--color-primary)' }}>
+          Volver a grupos
+        </button>
+      </div>
+    )
+  }
 
   const groupExpenses = expenses.filter(e => e.groupId === id)
   const groupDebts = debts.filter(d => d.groupId === id)
-  const members = group.memberIds.map(uid => users.find(u => u.id === uid))
+  const members = group.memberIds.map(uid => users.find(u => u.id === uid)).filter(Boolean)
 
   const getUserBalance = (userId) => {
     let balance = 0
     groupDebts.forEach(d => {
-      if (d.toUserId === userId && d.status === 'pending') balance += d.amount
-      if (d.fromUserId === userId && d.status === 'pending') balance -= d.amount
+      if (d.status !== 'pending') return
+      if (d.toUserId === userId) balance += d.amount
+      if (d.fromUserId === userId) balance -= d.amount
     })
     return balance
   }
 
   const getInitial = (name) => name?.charAt(0).toUpperCase() || '?'
   const avatarColors = ['#F97316', '#3B82F6', '#22C55E', '#8B5CF6', '#EF4444']
+
+  const recentExpenses = [...groupExpenses]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 5)
 
   return (
     <div className="group-detail">
@@ -48,7 +63,6 @@ function GroupDetail() {
           <h2 className="group-detail__section-title">Balance del grupo</h2>
           <div className="group-detail__balances">
             {members.map((member, idx) => {
-              if (!member) return null
               const balance = getUserBalance(member.id)
               return (
                 <div key={member.id} className="balance-row">
@@ -76,48 +90,61 @@ function GroupDetail() {
         <section className="group-detail__section">
           <h2 className="group-detail__section-title">Gastos recientes</h2>
           <div className="group-detail__expenses">
-            {groupExpenses.length === 0 && (
+            {recentExpenses.length === 0 ? (
               <p className="group-detail__empty-expenses">Aún no hay gastos en este grupo</p>
-            )}
-            {groupExpenses.map(expense => {
-              const paidByUser = users.find(u => u.id === expense.paidBy)
-              const expenseDate = new Date(expense.date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })
-              return (
-                <div key={expense.id} className="expense-row">
-                  <div className="expense-row__info">
-                    <p className="expense-row__desc">{expense.description}</p>
-                    <p className="expense-row__meta">
-                      {paidByUser?.name.split(' ')[0]} · {expenseDate}
-                    </p>
+            ) : (
+              recentExpenses.map(expense => {
+                const paidByUser = users.find(u => u.id === expense.paidBy)
+                const expenseDate = new Date(expense.date + 'T00:00:00')
+                  .toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })
+                return (
+                  <div key={expense.id} className="expense-row">
+                    <div className="expense-row__info">
+                      <p className="expense-row__desc">{expense.description}</p>
+                      <p className="expense-row__meta">
+                        {paidByUser
+                          ? (paidByUser.id === currentUser.id ? 'Tú' : paidByUser.name.split(' ')[0])
+                          : 'Alguien'} · {expenseDate}
+                      </p>
+                    </div>
+                    <span className="expense-row__amount">${expense.amount.toFixed(2)}</span>
                   </div>
-                  <span className="expense-row__amount">${expense.amount.toFixed(2)}</span>
-                </div>
-              )
-            })}
+                )
+              })
+            )}
           </div>
         </section>
       </div>
 
-      {/* Acciones */}
-      <div className="group-detail__actions">
+      {/* Resumen de deudas (visible dentro del flujo) */}
+      <div className="group-detail__debts-banner">
+        <div className="group-detail__debts-info">
+          <span className="group-detail__debts-icon">💰</span>
+          <span className="group-detail__debts-text">
+            {groupDebts.filter(d => d.status === 'pending').length} deuda{groupDebts.filter(d => d.status === 'pending').length !== 1 ? 's' : ''} pendiente{groupDebts.filter(d => d.status === 'pending').length !== 1 ? 's' : ''}
+          </span>
+        </div>
         <button
-          className="group-detail__btn group-detail__btn--primary"
-          onClick={() => navigate(`/groups/${id}/add-expense`)}
+          className="group-detail__debts-btn"
+          onClick={() => navigate(`/groups/${id}/debts`)}
         >
-          Agregar gasto
+          Ver resumen →
         </button>
+      </div>
+
+      {/* Acciones — alineadas a la derecha según diseño */}
+      <div className="group-detail__actions">
         <button
           className="group-detail__btn group-detail__btn--secondary"
           onClick={() => navigate(`/groups/${id}/scan`)}
         >
-          Escanear recibo
+          📷 Escanear recibo
         </button>
-      </div>
-
-      {/* Ver deudas */}
-      <div className="group-detail__debts-link">
-        <button onClick={() => navigate(`/groups/${id}/debts`)}>
-          Ver resumen de deudas →
+        <button
+          className="group-detail__btn group-detail__btn--primary"
+          onClick={() => navigate(`/groups/${id}/add-expense`)}
+        >
+          + Agregar gasto
         </button>
       </div>
     </div>

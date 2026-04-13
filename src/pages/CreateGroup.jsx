@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { groupEmojis } from '../data/groups'
+import { genId } from '../context/AppContext'
 import './CreateGroup.css'
 
 const groupTypes = [
@@ -19,7 +20,8 @@ function CreateGroup() {
   const handleContinue = () => {
     if (!name.trim()) return
     const emoji = selectedEmoji || (selectedType ? groupTypes.find(t => t.label === selectedType)?.emoji : '📦')
-    navigate('/groups/g1/invite', { state: { groupName: name, emoji } })
+    const newId = genId('g')
+    navigate(`/groups/${newId}/invite`, { state: { groupName: name, emoji, isNew: true, newId } })
   }
 
   return (
