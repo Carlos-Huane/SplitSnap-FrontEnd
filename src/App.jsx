@@ -1,5 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { AppProvider } from './context/AppContext'
+import { SidebarProvider, useSidebar } from './context/SidebarContext'
 import Sidebar from './components/shared/Sidebar'
 import Splash from './pages/Splash'
 import Login from './pages/Login'
@@ -20,6 +21,16 @@ import './App.css'
 
 const noSidebarRoutes = ['/', '/login', '/register']
 
+function SidebarOverlay() {
+  const { isOpen, closeSidebar } = useSidebar()
+  
+  if (!isOpen) return null
+  
+  return (
+    <div className="app-overlay" onClick={closeSidebar} />
+  )
+}
+
 function AppRoutes() {
   const location = useLocation()
   const showSidebar = !noSidebarRoutes.includes(location.pathname)
@@ -27,6 +38,7 @@ function AppRoutes() {
   return (
     <div className="app-layout">
       {showSidebar && <Sidebar />}
+      <SidebarOverlay />
       <main className="app-content">
         <Routes>
           <Route path="/" element={<Splash />} />
@@ -53,7 +65,9 @@ function AppRoutes() {
 function App() {
   return (
     <AppProvider>
-      <AppRoutes />
+      <SidebarProvider>
+        <AppRoutes />
+      </SidebarProvider>
     </AppProvider>
   )
 }
