@@ -2,18 +2,42 @@ import React from "react";
 import "../styles/dashboard.css";
 
 const Dashboard = () => {
+  const user = {
+  name: "Carlos",
+  fullName: "Carlos García"
+};
+
+const activities = [
+  {
+    id: 1,
+    icon: "🍕",
+    title: "Pizza noche",
+    info: "Roomies · Hace 2 horas",
+    amount: "+150.00",
+    type: "positive"
+  },
+  {
+    id: 2,
+    icon: "🛒",
+    title: "Súper semanal",
+    info: "Depa 4B · Ayer",
+    amount: "-320.50",
+    type: "negative"
+  }
+];
+
   return (
     <div className="dashboard">
 
       {/* Header */}
       <div className="header">
         <div>
-          <h2>Hola, Carlos 👋</h2>
+          <h2>Hola, {user.name} 👋</h2>
           <p>Bienvenido de vuelta</p>
         </div>
 
         <div className="user-info">
-          <span className="user-name">Carlos García</span>
+          <span className="user-name">{user.fullName}</span>
           <div className="avatar">CG</div>
         </div>
       </div>
@@ -33,43 +57,20 @@ const Dashboard = () => {
         </div>
 
         <div className="activity-list">
+          {activities.map((item) => (
+            <div className="activity-item" key={item.id}>
+              <div className="icon">{item.icon}</div>
 
-          <div className="activity-item">
-            <div className="icon">🍕</div>
-            <div className="info">
-              <p>Pizza noche</p>
-              <span>Roomies · Hace 2 horas</span>
+              <div className="info">
+                <p>{item.title}</p>
+                <span>{item.info}</span>
+              </div>
+
+              <div className={`amount ${item.type}`}>
+                {item.amount}
+              </div>
             </div>
-            <div className="amount positive">+$150.00</div>
-          </div>
-
-          <div className="activity-item">
-            <div className="icon">🛒</div>
-            <div className="info">
-              <p>Súper semanal</p>
-              <span>Depa 4B · Ayer</span>
-            </div>
-            <div className="amount negative">-$320.50</div>
-          </div>
-
-          <div className="activity-item">
-            <div className="icon">🎬</div>
-            <div className="info">
-              <p>Netflix mensual</p>
-              <span>Roomies · Hace 3 días</span>
-            </div>
-            <div className="amount positive">+$75.00</div>
-          </div>
-
-          <div className="activity-item">
-            <div className="icon">⚡</div>
-            <div className="info">
-              <p>Luz del mes</p>
-              <span>Depa 4B · Hace 5 días</span>
-            </div>
-            <div className="amount positive">+$200.00</div>
-          </div>
-
+          ))}
         </div>
       </div>
 
