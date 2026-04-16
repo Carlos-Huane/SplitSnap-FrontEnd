@@ -24,6 +24,30 @@ const activities = [
     info: "Depa 4B · Ayer",
     amount: "-320.50",
     type: "negative"
+  },
+  {
+    id: 3,
+    icon: "🎬",
+    title: "Netflix mensual",
+    info: "Roomies · Hace 3 días",
+    amount: "+$75.00",
+    type: "positive"
+  },
+  {
+    id: 4,
+    icon: "⚡",
+    title: "Luz del mes",
+    info: "Depa 4B · Hace 5 días",
+    amount: "+$200.00",
+    type: "positive"
+  },
+  {
+    id: 5,
+    icon: "🍔",
+    title: "Hamburguesas",
+    info: "Amigos · Hace 1 hora",
+    amount: "+$90.00",
+    type: "positive"
   }
 ];
 
