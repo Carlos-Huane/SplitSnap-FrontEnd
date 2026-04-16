@@ -1,5 +1,6 @@
 import React from "react";
 import "../styles/dashboard.css";
+import ActivityItem from "../components/dashboard/ActivityItem";
 
 const Dashboard = () => {
   const user = {

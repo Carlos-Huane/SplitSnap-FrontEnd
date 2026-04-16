@@ -109,6 +109,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  transition: transform 0.2s ease;
+}
+
+.activity-item:hover {
+  transform: scale(1.02);
 }
 
 .icon {
