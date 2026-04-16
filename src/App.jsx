@@ -5,6 +5,7 @@ import Sidebar from './components/shared/Sidebar'
 import Splash from './pages/Splash'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
 import Dashboard from './pages/Dashboard'
 import GroupList from './pages/GroupList'
 import GroupDetail from './pages/GroupDetail'
@@ -19,7 +20,7 @@ import EmptyState from './pages/EmptyState'
 import Historial from './pages/Historial'
 import './App.css'
 
-const noSidebarRoutes = ['/', '/login', '/register']
+const noSidebarRoutes = ['/', '/login', '/register', '/forgot-password']
 
 function SidebarOverlay() {
   const { isOpen, closeSidebar } = useSidebar()
@@ -44,6 +45,7 @@ function AppRoutes() {
           <Route path="/" element={<Splash />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/groups" element={<GroupList />} />
           <Route path="/groups/new" element={<CreateGroup />} />
