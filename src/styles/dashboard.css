@@ -1,66 +1,175 @@
 .dashboard {
   padding: 20px;
-  font-family: sans-serif;
+  background: #f6f6f6;
+  min-height: 100vh;
+  font-family: "Inter", sans-serif;
 }
 
-/* Balance */
+/* HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.header h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.header p {
+  font-size: 14px;
+  color: #777;
+}
+
+/* 👇 NUEVO */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.avatar {
+  background: #ff6b00;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* BALANCE */
 .balance-card {
-  background: orange;
+  background: linear-gradient(90deg, #ff6b00, #ff7a00);
   color: white;
   padding: 20px;
-  border-radius: 15px;
-  margin-bottom: 20px;
+  border-radius: 16px;
+  margin-bottom: 25px;
 }
 
-.balance-card h2 {
-  font-size: 28px;
+.balance-label {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.balance-amount {
+  font-size: 32px;
+  font-weight: bold;
   margin: 10px 0;
 }
 
-/* Actividad */
-.activity h3 {
+.balance-sub {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* SECCIONES */
+.section {
+  margin-bottom: 25px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 10px;
 }
 
-.item {
+.section h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.link {
+  color: #ff6b00;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ACTIVIDAD */
+.activity-list {
   display: flex;
-  justify-content: space-between;
-  background: #f5f5f5;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.activity-item {
+  background: white;
   padding: 12px;
-  border-radius: 10px;
-  margin-bottom: 10px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  background: #f2f2f2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.info {
+  flex: 1;
+  margin-left: 10px;
+}
+
+.info p {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.info span {
+  font-size: 12px;
+  color: #777;
+}
+
+.amount {
+  font-weight: 600;
 }
 
 .positive {
-  color: green;
+  color: #16a34a;
 }
 
 .negative {
-  color: red;
+  color: #dc2626;
 }
 
-/* Botones */
+/* BOTONES */
 .actions {
-  margin-top: 20px;
   display: flex;
   gap: 10px;
+  margin-top: 10px;
 }
 
 .btn {
   flex: 1;
   padding: 12px;
-  border-radius: 10px;
-  border: none;
+  border-radius: 12px;
+  font-size: 14px;
   cursor: pointer;
 }
 
 .primary {
-  background: orange;
+  background: #ff6b00;
   color: white;
+  border: none;
 }
 
 .outline {
-  border: 2px solid orange;
+  border: 2px solid #ff6b00;
   background: transparent;
-  color: orange;
+  color: #ff6b00;
 }
