@@ -150,6 +150,25 @@
   text-decoration: underline;
 }
 
+.login__forgot-link {
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: all 0.2s ease;
+  padding: 4px 0;
+  text-align: right;
+  align-self: flex-end;
+}
+
+.login__forgot-link:hover {
+  text-decoration: underline;
+  color: #EA6C0B;
+}
+
 @media (max-width: 768px) {
   .login {
     flex-direction: column;
