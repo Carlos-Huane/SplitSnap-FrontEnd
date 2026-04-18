@@ -1,47 +1,65 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { authMessages } from '../data/auth' 
+import { users } from '../data/global' 
 import './Login.css'
 import './Register.css'
 
 function Register() {
   const navigate = useNavigate()
-
-  // 1. Datos
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '', 
+    password: '',
+    confirmPassword: ''
+  })
   const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  const handleRegister = (e) => {
     e.preventDefault()
+    setError('')
 
-    // 2. Validación
-    if (!name || !email || !password) {
-      setError(authMessages.requiredField)
+    if (formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden.')
       return
     }
 
-    if (password.length < 6) {
-      setError(authMessages.passwordTooShort)
+    const exists = users.some((u) => u.email === formData.email)
+    if (exists) {
+      setError('Este correo ya está registrado.')
       return
     }
 
-    if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden")
-      return
+    const newUser = {
+      id: `u${users.length + 1}`,
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone, 
+      password: formData.password,
+      avatar: `https://i.pravatar.cc/150?u=${formData.email}`,
+      currency: 'PEN',
+      createdAt: new Date().toISOString().split('T')[0],
     }
 
-    // Si todo está bien
-    alert(authMessages.registerSuccess)
+    users.push(newUser)
+
+    console.log('Usuario registrado:', newUser)
+    alert('Cuenta creada exitosamente.')
     navigate('/login')
   }
 
   return (
     <div className="login">
+
       <div className="login__brand">
         <div className="login__brand-content">
           <div className="login__logo">S</div>
@@ -51,23 +69,25 @@ function Register() {
           </p>
         </div>
       </div>
-
+      
       <div className="login__form-side">
-        <form className="login__form" onSubmit={handleSubmit}>
-          <h2 className="login__form-title">Regístrate y forma parte</h2>
-          <p className="login__form-subtitle">Ingresa tus datos para continuar</p>
+        <form className="login__form" onSubmit={handleRegister}>
+          <h2 className="login__form-title">Crear cuenta</h2>
+          <p className="login__form-subtitle">Únete a SplitSnap hoy mismo</p>
 
-          {error && <p style={{ color: 'red', fontSize: '0.8rem' }}>{error}</p>}
+          {error && <p style={{ color: '#ff4d4d', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</p>}
 
           <div className="login__fields">
             <div className="login__field">
               <label className="login__label">Nombre completo</label>
               <input
                 className="login__input"
+                name="name"
                 type="text"
                 placeholder="Ej. Juan Pérez"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                required
+                value={formData.name}
+                onChange={handleChange}
               />
             </div>
 
@@ -75,21 +95,26 @@ function Register() {
               <label className="login__label">Correo electrónico</label>
               <input
                 className="login__input"
+                name="email"
                 type="email"
                 placeholder="tu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                required
+                value={formData.email}
+                onChange={handleChange}
               />
             </div>
 
+            {/* --- NUEVO CAMPO DE TELÉFONO --- */}
             <div className="login__field">
-              <label className="login__label">Número telefónico</label>
+              <label className="login__label">Número de teléfono</label>
               <input
                 className="login__input"
+                name="phone"
                 type="tel"
-                placeholder="+51 999 000 000"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+51 999 999 999"
+                required
+                value={formData.phone}
+                onChange={handleChange}
               />
             </div>
 
@@ -97,10 +122,12 @@ function Register() {
               <label className="login__label">Contraseña</label>
               <input
                 className="login__input"
+                name="password"
                 type="password"
-                placeholder="Mínimo 6 dígitos"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                value={formData.password}
+                onChange={handleChange}
               />
             </div>
 
@@ -108,23 +135,24 @@ function Register() {
               <label className="login__label">Confirmar contraseña</label>
               <input
                 className="login__input"
+                name="confirmPassword"
                 type="password"
-                placeholder="Repite tu contraseña"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                value={formData.confirmPassword}
+                onChange={handleChange}
               />
             </div>
           </div>
 
           <button className="login__btn" type="submit">
-            Crear cuenta
+            Registrarse
           </button>
-          
+
           <p className="login__link">
             ¿Ya tienes cuenta?{' '}
-            <span onClick={() => navigate('/login')}>Iniciar sesión</span>
+            <span onClick={() => navigate('/login')}>Inicia sesión</span>
           </p>
-
         </form>
       </div>
     </div>

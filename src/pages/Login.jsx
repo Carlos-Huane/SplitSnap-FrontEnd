@@ -1,32 +1,31 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-// 1. Importamos el array de usuarios desde tu archivo de datos
+
+//impoirtacion de credenciales
 import { users } from '../data/global' 
+
 import './Login.css'
 
 function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  // Estado para mostrar un mensaje si el login falla
   const [error, setError] = useState('')
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    setError('') // Limpiar errores previos
+    setError('') 
 
-    // 2. Buscamos si existe un usuario con ese email y contraseña
+    // busqueda de correos y contraseña en global
     const userFound = users.find(
       (user) => user.email === email && user.password === password
     )
 
     if (userFound) {
-      // Si existe, guardamos (opcionalmente) algo en localStorage y navegamos
       console.log('Bienvenido:', userFound.name)
-      // localStorage.setItem('user', JSON.stringify(userFound)) // Útil para mantener la sesión
       navigate('/dashboard')
     } else {
-      // 3. Si no existe, mostramos un error
+      // error si no encuentra usurio 
       setError('Credenciales incorrectas. Intenta de nuevo.')
     }
   }
