@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useSidebar } from '../../context/SidebarContext'
 import './Sidebar.css'
 
 const navItems = [
@@ -11,12 +12,18 @@ const navItems = [
 function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { isOpen, closeSidebar } = useSidebar()
 
   const isActive = (match) => location.pathname === match || location.pathname.startsWith(match + '/')
 
+  const handleNavigation = (path) => {
+    navigate(path)
+    closeSidebar()
+  }
+
   return (
-    <aside className="sidebar">
-      <div className="sidebar__logo" onClick={() => navigate('/dashboard')}>
+    <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
+      <div className="sidebar__logo" onClick={() => handleNavigation('/dashboard')}>
         <div className="sidebar__logo-icon">S</div>
         <span className="sidebar__logo-text">SplitSnap</span>
       </div>
@@ -26,7 +33,7 @@ function Sidebar() {
           <button
             key={item.label}
             className={`sidebar__nav-item ${isActive(item.match) ? 'active' : ''}`}
-            onClick={() => navigate(item.path)}
+            onClick={() => handleNavigation(item.path)}
           >
             <span className="sidebar__nav-icon">{item.icon}</span>
             <span>{item.label}</span>
@@ -34,7 +41,7 @@ function Sidebar() {
         ))}
       </nav>
 
-      <button className="sidebar__logout" onClick={() => navigate('/login')}>
+      <button className="sidebar__logout" onClick={() => handleNavigation('/login')}>
         <span className="sidebar__logout-icon">🚪</span>
         <span>Cerrar sesión</span>
       </button>

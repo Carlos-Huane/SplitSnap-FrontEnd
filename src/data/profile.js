@@ -30,9 +30,8 @@
 // Estos números son mock. Cuando haya backend se calculan real.
 export const profileStats = [
   { id: 'ps1', label: 'Grupos activos',   value: 3,    emoji: '👥' },
-  { id: 'ps2', label: 'Gastos registrados', value: 24, emoji: '💸' },
-  { id: 'ps3', label: 'Total gastado',    value: 2480, emoji: '📊', isCurrency: true },
-  { id: 'ps4', label: 'Pagos realizados', value: 12,   emoji: '✅' },
+  { id: 'ps2', label: 'Gastos ', value: 24, emoji: '💸' },
+  { id: 'ps3', label: 'Total ',    value: 2480, emoji: '📊', isCurrency: true },
 ]
 
 // ------------------------------------------------------------
@@ -40,14 +39,11 @@ export const profileStats = [
 // ------------------------------------------------------------
 export const settingsMenu = [
   { id: 'sm1', label: 'Editar perfil',       emoji: '👤', section: 'cuenta' },
-  { id: 'sm2', label: 'Cambiar contraseña',  emoji: '🔒', section: 'cuenta' },
+  { id: 'sm2', label: 'Métodos de pago',     emoji: '💳', section: 'cuenta' },
   { id: 'sm3', label: 'Notificaciones',      emoji: '🔔', section: 'preferencias' },
-  { id: 'sm4', label: 'Idioma',              emoji: '🌐', section: 'preferencias' },
-  { id: 'sm5', label: 'Moneda',              emoji: '💱', section: 'preferencias' },
-  { id: 'sm6', label: 'Privacidad',          emoji: '🛡️', section: 'privacidad' },
-  { id: 'sm7', label: 'Ayuda y soporte',     emoji: '❓', section: 'soporte' },
-  { id: 'sm8', label: 'Acerca de SplitSnap', emoji: 'ℹ️', section: 'soporte' },
-  { id: 'sm9', label: 'Cerrar sesión',       emoji: '🚪', section: 'cuenta', danger: true },
+  { id: 'sm4', label: 'Privacidad',          emoji: '🛡️', section: 'privacidad' },
+  { id: 'sm5', label: 'Cerrar sesión',       emoji: '🚪', section: 'cuenta', danger: true },
+  
 ]
 
 // ------------------------------------------------------------
@@ -76,17 +72,23 @@ export const preferences = {
 }
 
 // ------------------------------------------------------------
-// IDIOMAS Y MONEDAS DISPONIBLES
+// MÉTODOS DE PAGO — Tarjetas del usuario
 // ------------------------------------------------------------
-export const availableLanguages = [
-  { code: 'es', label: 'Español' },
-  { code: 'en', label: 'English' },
-  { code: 'pt', label: 'Português' },
-]
-
-export const availableCurrencies = [
-  { code: 'PEN', label: 'Sol peruano',   symbol: 'S/' },
-  { code: 'USD', label: 'Dólar',         symbol: '$'  },
-  { code: 'EUR', label: 'Euro',          symbol: '€'  },
-  { code: 'MXN', label: 'Peso mexicano', symbol: '$'  },
+export const paymentMethods = [
+  { 
+    id: 'pm1', 
+    type: 'Visa', 
+    lastFour: '4582', 
+    expiry: '12/26', 
+    isDefault: true, 
+    brandColor: '#1A1F71' 
+  },
+  { 
+    id: 'pm2', 
+    type: 'Mastercard', 
+    lastFour: '8831', 
+    expiry: '08/25', 
+    isDefault: false, 
+    brandColor: '#EB001B' 
+  },
 ]
