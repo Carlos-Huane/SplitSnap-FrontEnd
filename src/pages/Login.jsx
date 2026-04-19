@@ -72,6 +72,13 @@ function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+              <button
+                type="button"
+                className="login__forgot-link"
+                onClick={() => navigate('/forgot-password')}
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
             </div>
           </div>
 
