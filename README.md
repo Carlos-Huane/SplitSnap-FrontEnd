@@ -11,13 +11,14 @@
 3. [Stack Tecnológico](#3-stack-tecnológico)
 4. [Estructura del Proyecto](#4-estructura-del-proyecto)
 5. [Ramas (Branches)](#5-ramas-branches)
-6. [Pull Requests Fusionados](#6-pull-requests-fusionados)
-7. [Historial de Commits](#7-historial-de-commits)
-8. [Arquitectura de la Aplicación](#8-arquitectura-de-la-aplicación)
-9. [Rutas de la Aplicación](#9-rutas-de-la-aplicación)
-10. [Capa de Datos Mock](#10-capa-de-datos-mock)
-11. [Convenciones del Proyecto](#11-convenciones-del-proyecto)
-12. [Cómo Ejecutar el Proyecto](#12-cómo-ejecutar-el-proyecto)
+6. [Línea de Tiempo del Desarrollo](#6-línea-de-tiempo-del-desarrollo)
+7. [Pull Requests Fusionados](#7-pull-requests-fusionados)
+8. [Historial de Commits](#8-historial-de-commits)
+9. [Arquitectura de la Aplicación](#9-arquitectura-de-la-aplicación)
+10. [Rutas de la Aplicación](#10-rutas-de-la-aplicación)
+11. [Capa de Datos Mock](#11-capa-de-datos-mock)
+12. [Convenciones del Proyecto](#12-convenciones-del-proyecto)
+13. [Cómo Ejecutar el Proyecto](#13-cómo-ejecutar-el-proyecto)
 
 ---
 
@@ -50,14 +51,23 @@ La aplicación consume una **capa de datos mock** local (sin backend real) duran
 
 **Total de commits:** 66
 
-### Contribución por integrante
+### Distribución de commits por integrante
 
+```mermaid
+pie title Commits por Integrante (Total: 66)
+    "Carlos Huane — 46" : 46
+    "Obed Velarde — 9" : 9
+    "Nakusuo — 5" : 5
+    "SphannajerFuentes — 3" : 3
+    "yacoafk — 3" : 3
 ```
-Carlos Huane       ████████████████████████████████████████  46 commits (69.7%)
-Obed Velarde       ████████                                   9 commits (13.6%)
-Nakusuo            █████                                      5 commits  (7.6%)
-SphannajerFuentes  ███                                        3 commits  (4.5%)
-yacoafk            ███                                        3 commits  (4.5%)
+
+```mermaid
+xychart-beta
+    title "Commits por Integrante"
+    x-axis ["Carlos Huane", "Obed Velarde", "Nakusuo", "SphannajerFuentes", "yacoafk"]
+    y-axis "Número de commits" 0 --> 50
+    bar [46, 9, 5, 3, 3]
 ```
 
 ---
@@ -77,6 +87,15 @@ yacoafk            ███                                        3 commits  (
 **Lenguaje:** JavaScript (JSX)  
 **Estilos:** CSS plano con variables CSS personalizadas (sin frameworks de UI)  
 **Persistencia:** `localStorage` (clave `splitsnap_v1`) durante el Sprint 1
+
+### Distribución de pantallas por módulo
+
+```mermaid
+pie title Pantallas por Módulo (Total: 16)
+    "Grupos (GroupList, Detail, Create, Invite, AddExpense, Scan, Review, Debts)" : 8
+    "Auth (Login, Register, ForgotPassword)" : 3
+    "App (Splash, Dashboard, Historial, Profile, EmptyState)" : 5
+```
 
 ---
 
@@ -173,7 +192,29 @@ splitsnap-frontend/
 
 ---
 
-## 6. Pull Requests Fusionados
+## 6. Línea de Tiempo del Desarrollo
+
+```mermaid
+gantt
+    title Línea de Tiempo — Sprint 1 (SplitSnap Frontend)
+    dateFormat  YYYY-MM-DD
+    section Configuración
+    Initial commit & MVP diseño        :done, 2026-03-29, 2026-03-30
+    Setup, Routing, Sidebar, Splash    :done, 2026-04-02, 1d
+    Login & diseño mejorado            :done, 2026-04-02, 1d
+    section Funcionalidades Core
+    Base de datos local mock           :done, 2026-04-12, 1d
+    Sección Grupos (8 pantallas)       :done, 2026-04-13, 1d
+    section Integrantes
+    Contraseña & Historial (Nakusuo)   :done, 2026-04-14, 2026-04-16
+    Auth / Register (yacoafk)          :done, 2026-04-16, 2026-04-18
+    Dashboard (Obed Velarde)           :done, 2026-04-16, 1d
+    Perfil (SphannajerFuentes)         :done, 2026-04-16, 1d
+    section Integración Final
+    Merge Register & Dashboard         :done, 2026-04-19, 1d
+```
+
+## 7. Pull Requests Fusionados
 
 | PR | Rama origen | Fecha | Descripción |
 |----|-------------|-------|-------------|
@@ -193,7 +234,7 @@ splitsnap-frontend/
 
 ---
 
-## 7. Historial de Commits
+## 8. Historial de Commits
 
 | Hash | Autor | Fecha | Mensaje |
 |------|-------|-------|---------|
@@ -266,7 +307,7 @@ splitsnap-frontend/
 
 ---
 
-## 8. Arquitectura de la Aplicación
+## 9. Arquitectura de la Aplicación
 
 ### Gestión de Estado Global — `AppContext`
 
@@ -314,7 +355,7 @@ Controla el estado de apertura/cierre del sidebar lateral en dispositivos móvil
 
 ---
 
-## 9. Rutas de la Aplicación
+## 10. Rutas de la Aplicación
 
 | Ruta | Componente | Sidebar | Descripción |
 |------|-----------|---------|-------------|
@@ -337,7 +378,7 @@ Controla el estado de apertura/cierre del sidebar lateral en dispositivos móvil
 
 ---
 
-## 10. Capa de Datos Mock
+## 11. Capa de Datos Mock
 
 Durante el Sprint 1 no existe backend. Toda la data proviene de archivos en `src/data/`.
 
@@ -391,7 +432,7 @@ const groups = await fetch('/api/groups').then(r => r.json())
 
 ---
 
-## 11. Convenciones del Proyecto
+## 12. Convenciones del Proyecto
 
 ### Ramas
 
@@ -426,7 +467,7 @@ Cada página tiene su propio par `NombrePagina.jsx` + `NombrePagina.css` dentro 
 
 ---
 
-## 12. Cómo Ejecutar el Proyecto
+## 13. Cómo Ejecutar el Proyecto
 
 ### Requisitos previos
 
