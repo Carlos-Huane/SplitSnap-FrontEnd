@@ -4,6 +4,17 @@
 
 ---
 
+## Enlaces del Proyecto
+
+| Recurso | Enlace |
+|---------|--------|
+| Diseño UI | [Figma — SplitSnap](https://www.figma.com/design/cQIWPo5Q8xUltYI0csHZ6q/Pencil-to-Figma-Importer--Comunidad-?node-id=1-1892&t=MDs1X9QVeJqjXc6H-1) |
+| Product Backlog y Requerimientos | [Google Docs](https://docs.google.com/document/d/1zwfa7n6_puNALHguFup8Qa2poQH24fvr/edit?usp=sharing&ouid=115107241775214727274&rtpof=true&sd=true) |
+| Gestión de Tareas | [Jira — SplitSnap](https://carloshuanesarmiento.atlassian.net/jira/software/projects/SCRUM/boards/1?atlOrigin=eyJpIjoiYzIyNjJjMTBlOTM4NGQ4MmI1YjdmZGU0YjMwMDUzYWMiLCJwIjoiaiJ9) |
+| Repositorio Frontend | [GitHub — SplitSnap](https://github.com/Carlos-Huane/SplitSnap-) |
+
+---
+
 ## Tabla de Contenidos
 
 1. [Descripción General](#1-descripción-general)
