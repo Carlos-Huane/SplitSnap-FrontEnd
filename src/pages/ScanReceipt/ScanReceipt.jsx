@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { mockReceiptItems } from '../data/groups'
+import { mockReceiptItems } from '../../data/groups'
 import './ScanReceipt.css'
 
 function ScanReceipt() {

@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import { users, currentUser } from '../data/global'
+import { useApp } from '../../context/AppContext'
 import './DebtSummary.css'
 
 function DebtSummary() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const { groups, expenses, debts, dispatch } = useApp()
+  const { groups, expenses, debts, credits, allUsers, currentUser, dispatch } = useApp()
+  const users = allUsers
 
   const group = groups.find(g => g.id === id)
   const groupDebts = debts.filter(d => d.groupId === id)
@@ -25,6 +25,16 @@ function DebtSummary() {
   }
 
   const markAsPaid = (debtId) => dispatch({ type: 'MARK_DEBT_PAID', debtId })
+
+  const payWithCredits = (debt) => {
+    if (credits < debt.amount) {
+      showToast(`Créditos insuficientes. Te faltan S/ ${(debt.amount - credits).toFixed(2)}. Compra más en tu Perfil.`)
+      return
+    }
+    dispatch({ type: 'SPEND_CREDITS', amount: debt.amount, debtId: debt.id })
+    dispatch({ type: 'MARK_DEBT_PAID', debtId: debt.id, paidWith: 'credits' })
+    showToast(`✓ Pago de S/${debt.amount.toFixed(2)} registrado con créditos SplitSnap`)
+  }
 
   const pendingDebts = groupDebts.filter(d => d.status !== 'paid')
   const paidDebts = groupDebts.filter(d => d.status === 'paid')
@@ -97,20 +107,20 @@ function DebtSummary() {
 
         <div className="debt-card__actions">
           <button
-            className="debt-card__pay-btn"
-            onClick={() => showToast('💳 PayPal no disponible aún. ¡Próximamente!')}
+            className="debt-card__pay-btn debt-card__pay-btn--credits"
+            onClick={() => payWithCredits(debt)}
+            disabled={credits < debt.amount}
+            title={credits < debt.amount ? 'Créditos insuficientes' : 'Pagar con créditos SplitSnap'}
           >
-            💳 PayPal
-          </button>
-          <button
-            className="debt-card__pay-btn"
-            onClick={() => showToast('📲 Venmo no disponible aún. ¡Próximamente!')}
-          >
-            📲 Venmo
+            💰 Pagar con créditos SplitSnap · S/{debt.amount.toFixed(2)}
           </button>
         </div>
+        <p className="debt-card__credits-hint">
+          Saldo: {credits.toFixed(2)} créditos
+          {credits < debt.amount && ' · Compra más en tu Perfil'}
+        </p>
         <button className="debt-card__mark-paid" onClick={() => markAsPaid(debt.id)}>
-          ☑ Marcar como pagado
+          ☑ Marcar como pagado (efectivo / otro)
         </button>
       </div>
     )

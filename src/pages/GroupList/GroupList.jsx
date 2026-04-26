@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
+import { useApp } from '../../context/AppContext'
 import './GroupList.css'
 
 function GroupList() {
@@ -67,7 +67,7 @@ function GroupList() {
                     <p className="group-card__members">{memberCount} miembro{memberCount !== 1 ? 's' : ''}</p>
                   </div>
                   <span className="group-card__total">
-                    ${total.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                    S/ {total.toLocaleString('es-PE', { minimumFractionDigits: 0 })}
                   </span>
                 </div>
               )

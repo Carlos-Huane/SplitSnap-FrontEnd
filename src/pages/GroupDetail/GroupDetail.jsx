@@ -1,12 +1,12 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import { users, currentUser } from '../data/global'
+import { useApp } from '../../context/AppContext'
 import './GroupDetail.css'
 
 function GroupDetail() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const { groups, expenses, debts } = useApp()
+  const { groups, expenses, debts, allUsers, currentUser } = useApp()
+  const users = allUsers
 
   const group = groups.find(g => g.id === id)
   if (!group) {
@@ -78,7 +78,7 @@ function GroupDetail() {
                     </span>
                   </div>
                   <span className={`balance-row__amount ${balance >= 0 ? 'positive' : 'negative'}`}>
-                    {balance >= 0 ? '+' : ''}${Math.abs(balance).toFixed(2)}
+                    {balance >= 0 ? '+' : '-'}S/ {Math.abs(balance).toFixed(2)}
                   </span>
                 </div>
               )
@@ -107,7 +107,7 @@ function GroupDetail() {
                           : 'Alguien'} · {expenseDate}
                       </p>
                     </div>
-                    <span className="expense-row__amount">${expense.amount.toFixed(2)}</span>
+                    <span className="expense-row__amount">S/ {expense.amount.toFixed(2)}</span>
                   </div>
                 )
               })

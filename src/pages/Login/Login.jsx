@@ -1,31 +1,30 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-
-//impoirtacion de credenciales
-import { users } from '../data/global' 
-
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useApp } from '../../context/AppContext'
 import './Login.css'
 
 function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { allUsers, dispatch } = useApp()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    setError('') 
+    setError('')
 
-    // busqueda de correos y contraseña en global
-    const userFound = users.find(
-      (user) => user.email === email && user.password === password
+    const normalizedEmail = email.trim().toLowerCase()
+    const userFound = allUsers.find(
+      (user) => user.email.toLowerCase() === normalizedEmail && user.password === password
     )
 
     if (userFound) {
-      console.log('Bienvenido:', userFound.name)
-      navigate('/dashboard')
+      dispatch({ type: 'LOGIN', userId: userFound.id })
+      const redirect = location.state?.from || '/dashboard'
+      navigate(redirect, { replace: true })
     } else {
-      // error si no encuentra usurio 
       setError('Credenciales incorrectas. Intenta de nuevo.')
     }
   }
@@ -47,7 +46,6 @@ function Login() {
           <h2 className="login__form-title">Iniciar sesión</h2>
           <p className="login__form-subtitle">Ingresa tus datos para continuar</p>
 
-          {/* Mostrar error si los datos son incorrectos */}
           {error && <p style={{ color: '#ff4d4d', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</p>}
 
           <div className="login__fields">

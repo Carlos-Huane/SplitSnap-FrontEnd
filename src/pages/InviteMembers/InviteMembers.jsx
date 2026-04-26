@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { users, currentUser } from '../data/global'
-import { useApp } from '../context/AppContext'
+import { useApp } from '../../context/AppContext'
 import './InviteMembers.css'
 
 const colors = ['#F97316', '#3B82F6', '#22C55E', '#8B5CF6', '#EF4444']
@@ -11,7 +10,8 @@ function InviteMembers() {
   const navigate = useNavigate()
   const { id } = useParams()
   const location = useLocation()
-  const { groups, dispatch } = useApp()
+  const { groups, allUsers, currentUser, dispatch } = useApp()
+  const users = allUsers
   const inputRef = useRef(null)
   const dropdownRef = useRef(null)
 

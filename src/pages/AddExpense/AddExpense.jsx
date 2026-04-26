@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useApp, genId, buildDebts } from '../context/AppContext'
-import { users, currentUser } from '../data/global'
+import { useApp, genId, buildDebts } from '../../context/AppContext'
 import './AddExpense.css'
 
 function AddExpense() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const { groups, dispatch } = useApp()
+  const { groups, allUsers, currentUser, dispatch } = useApp()
+  const users = allUsers
 
   const group = groups.find(g => g.id === id)
   const members = group
@@ -89,7 +89,7 @@ function AddExpense() {
         <div className="add-expense__amount-section">
           <p className="add-expense__amount-label">Monto</p>
           <div className="add-expense__amount-box">
-            <p className="add-expense__amount-value">${displayAmount}</p>
+            <p className="add-expense__amount-value">S/ {displayAmount}</p>
             <input
               className="add-expense__amount-input"
               type="number"
@@ -186,7 +186,7 @@ function AddExpense() {
                     <span>{m.id === currentUser.id ? 'Tú' : m.name.split(' ')[0]}</span>
                   </div>
                   <span className="add-expense__split-amount">
-                    ${perPerson.toFixed(2)}
+                    S/ {perPerson.toFixed(2)}
                   </span>
                 </div>
               ))}
@@ -223,8 +223,8 @@ function AddExpense() {
                 {Math.abs(customRemaining) < 0.01
                   ? '✓ Monto distribuido correctamente'
                   : customRemaining > 0
-                    ? `Faltan distribuir: $${customRemaining.toFixed(2)}`
-                    : `Te excediste por: $${Math.abs(customRemaining).toFixed(2)}`}
+                    ? `Faltan distribuir: S/ ${customRemaining.toFixed(2)}`
+                    : `Te excediste por: S/ ${Math.abs(customRemaining).toFixed(2)}`}
               </div>
             </div>
           )}

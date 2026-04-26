@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useApp } from '../../context/AppContext'
 import './ForgotPassword.css'
 
 function ForgotPassword() {
   const navigate = useNavigate()
+  const { allUsers, dispatch } = useApp()
   const [step, setStep] = useState('email') // 'email', 'code', 'password'
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
@@ -12,23 +14,31 @@ function ForgotPassword() {
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [foundUser, setFoundUser] = useState(null)
 
   const handleEmailSubmit = (e) => {
     e.preventDefault()
     setErrorMessage('')
-    
-    if (!email) {
+    setSuccessMessage('')
+
+    const normalized = email.trim().toLowerCase()
+    if (!normalized) {
       setErrorMessage('Por favor ingresa tu correo electrónico')
+      return
+    }
+    const user = allUsers.find(u => u.email.toLowerCase() === normalized)
+    if (!user) {
+      setErrorMessage('No existe ninguna cuenta con ese correo.')
       return
     }
 
     setIsLoading(true)
-    // Simular envío de código
     setTimeout(() => {
-      setSuccessMessage('Código de recuperación enviado a tu correo')
+      setFoundUser(user)
+      setSuccessMessage('Código de recuperación enviado a tu correo (demo: usa 123456)')
       setStep('code')
       setIsLoading(false)
-    }, 1000)
+    }, 600)
   }
 
   const handleCodeSubmit = (e) => {
@@ -39,14 +49,17 @@ function ForgotPassword() {
       setErrorMessage('Ingresa un código válido de 6 dígitos')
       return
     }
+    if (code !== '123456') {
+      setErrorMessage('Código incorrecto. (Demo: usa 123456)')
+      return
+    }
 
     setIsLoading(true)
-    // Simular validación del código
     setTimeout(() => {
-      setSuccessMessage('Código validado correctamente')
+      setSuccessMessage('')
       setStep('password')
       setIsLoading(false)
-    }, 1000)
+    }, 600)
   }
 
   const handlePasswordSubmit = (e) => {
@@ -54,13 +67,19 @@ function ForgotPassword() {
     setErrorMessage('')
     setSuccessMessage('')
 
+    if (!foundUser) {
+      setErrorMessage('Sesión expirada. Vuelve a comenzar.')
+      setStep('email')
+      return
+    }
+
     if (!newPassword || !confirmPassword) {
       setErrorMessage('Por favor completa ambos campos')
       return
     }
 
-    if (newPassword.length < 8) {
-      setErrorMessage('La contraseña debe tener al menos 8 caracteres')
+    if (newPassword.length < 6) {
+      setErrorMessage('La contraseña debe tener al menos 6 caracteres')
       return
     }
 
@@ -70,14 +89,18 @@ function ForgotPassword() {
     }
 
     setIsLoading(true)
-    // Simular actualización de contraseña
     setTimeout(() => {
-      setSuccessMessage('¡Contraseña actualizada exitosamente!')
+      dispatch({
+        type: 'UPDATE_PROFILE',
+        userId: foundUser.id,
+        changes: { password: newPassword },
+      })
+      setSuccessMessage('¡Contraseña actualizada exitosamente! Ya puedes iniciar sesión con tu nueva contraseña.')
       setIsLoading(false)
       setTimeout(() => {
         navigate('/login')
       }, 1500)
-    }, 1000)
+    }, 600)
   }
 
   return (

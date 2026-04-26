@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { groupEmojis } from '../data/groups'
-import { genId } from '../context/AppContext'
+import { groupEmojis } from '../../data/groups'
+import { genId } from '../../context/AppContext'
 import './CreateGroup.css'
 
 const groupTypes = [

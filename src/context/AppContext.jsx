@@ -1,10 +1,16 @@
 import { createContext, useContext, useReducer, useEffect } from 'react'
+import { users as seedUsers } from '../data/global'
 
-// ─── Estado inicial: sin grupos (experiencia real desde cero) ──────────────
 const initialState = {
   groups: [],
   expenses: [],
   debts: [],
+  credits: 0,
+  profileAvatar: null,
+  creditTransactions: [],
+  customUsers: [],
+  currentUserId: null,
+  userOverrides: {},
 }
 
 function reducer(state, action) {
@@ -22,7 +28,9 @@ function reducer(state, action) {
       return {
         ...state,
         debts: state.debts.map(d =>
-          d.id === action.debtId ? { ...d, status: 'paid' } : d
+          d.id === action.debtId
+            ? { ...d, status: 'paid', paidAt: new Date().toISOString().split('T')[0], paidWith: action.paidWith || 'manual' }
+            : d
         ),
       }
 
@@ -36,15 +44,73 @@ function reducer(state, action) {
         ),
       }
 
+    case 'BUY_CREDITS': {
+      const tx = {
+        id: genId('ct'),
+        type: 'purchase',
+        amount: action.amount,
+        date: new Date().toISOString(),
+      }
+      return {
+        ...state,
+        credits: parseFloat((state.credits + action.amount).toFixed(2)),
+        creditTransactions: [tx, ...state.creditTransactions],
+      }
+    }
+
+    case 'SPEND_CREDITS': {
+      if (state.credits < action.amount) return state
+      const tx = {
+        id: genId('ct'),
+        type: 'spend',
+        amount: action.amount,
+        debtId: action.debtId || null,
+        date: new Date().toISOString(),
+      }
+      return {
+        ...state,
+        credits: parseFloat((state.credits - action.amount).toFixed(2)),
+        creditTransactions: [tx, ...state.creditTransactions],
+      }
+    }
+
+    case 'SET_AVATAR':
+      return { ...state, profileAvatar: action.avatar }
+
+    case 'LOGIN':
+      return { ...state, currentUserId: action.userId }
+
+    case 'LOGOUT':
+      return { ...state, currentUserId: null }
+
+    case 'REGISTER_USER': {
+      const newUser = action.user
+      return {
+        ...state,
+        customUsers: [...state.customUsers, newUser],
+        currentUserId: newUser.id,
+      }
+    }
+
+    case 'UPDATE_PROFILE': {
+      const id = action.userId || state.currentUserId
+      if (!id) return state
+      return {
+        ...state,
+        userOverrides: {
+          ...state.userOverrides,
+          [id]: { ...(state.userOverrides[id] || {}), ...action.changes },
+        },
+      }
+    }
+
     default:
       return state
   }
 }
 
-// ─── Helpers exportados para generar IDs únicos ────────────────────────────
 export const genId = (prefix = 'x') => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
 
-// Genera las deudas a partir de un gasto (incluye expenseId para trazabilidad)
 export function buildDebts(expense) {
   return expense.splitBetween
     .filter(split => split.userId !== expense.paidBy && split.amount > 0)
@@ -60,26 +126,35 @@ export function buildDebts(expense) {
     }))
 }
 
-// ─── Context ───────────────────────────────────────────────────────────────
 const AppContext = createContext(null)
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState, (init) => {
     try {
       const saved = localStorage.getItem('splitsnap_v1')
-      return saved ? JSON.parse(saved) : init
+      if (!saved) return init
+      const parsed = JSON.parse(saved)
+      return { ...init, ...parsed }
     } catch {
       return init
     }
   })
 
-  // Persistir en localStorage en cada cambio de estado
   useEffect(() => {
     localStorage.setItem('splitsnap_v1', JSON.stringify(state))
   }, [state])
 
+  const allUsers = [...seedUsers, ...state.customUsers].map(u => ({
+    ...u,
+    ...(state.userOverrides[u.id] || {}),
+  }))
+
+  const currentUser = state.currentUserId
+    ? allUsers.find(u => u.id === state.currentUserId) || null
+    : null
+
   return (
-    <AppContext.Provider value={{ ...state, dispatch }}>
+    <AppContext.Provider value={{ ...state, allUsers, currentUser, dispatch }}>
       {children}
     </AppContext.Provider>
   )
