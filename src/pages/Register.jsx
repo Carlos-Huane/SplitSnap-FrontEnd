@@ -1,65 +1,82 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-import { users } from '../data/global' 
+import { useApp, genId } from '../context/AppContext'
 import './Login.css'
 import './Register.css'
 
 function Register() {
   const navigate = useNavigate()
-  
+  const { allUsers, dispatch } = useApp()
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '', 
+    phone: '',
     password: '',
     confirmPassword: ''
   })
   const [error, setError] = useState('')
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
+    setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
   const handleRegister = (e) => {
     e.preventDefault()
     setError('')
 
+    const name = formData.name.trim().replace(/\s+/g, ' ')
+    const email = formData.email.trim().toLowerCase()
+    const phone = formData.phone.trim().replace(/\s+/g, '')
+
+    if (name.length < 3) {
+      setError('Ingresa tu nombre completo (mínimo 3 caracteres).')
+      return
+    }
+    if (!/^[A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s[A-Za-zÁÉÍÓÚÑáéíóúñ]+)+$/.test(name)) {
+      setError('El nombre debe contener nombre y apellido, solo letras.')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Ingresa un correo electrónico válido.')
+      return
+    }
+    if (!/^\+?\d{7,15}$/.test(phone)) {
+      setError('El teléfono debe tener entre 7 y 15 dígitos (puede iniciar con +).')
+      return
+    }
+    if (formData.password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres.')
+      return
+    }
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden.')
       return
     }
 
-    const exists = users.some((u) => u.email === formData.email)
+    const exists = allUsers.some((u) => u.email.toLowerCase() === email)
     if (exists) {
       setError('Este correo ya está registrado.')
       return
     }
 
     const newUser = {
-      id: `u${users.length + 1}`,
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone, 
+      id: genId('u'),
+      name,
+      email,
+      phone,
       password: formData.password,
-      avatar: `https://i.pravatar.cc/150?u=${formData.email}`,
+      avatar: `https://i.pravatar.cc/150?u=${email}`,
       currency: 'PEN',
       createdAt: new Date().toISOString().split('T')[0],
     }
 
-    users.push(newUser)
-
-    console.log('Usuario registrado:', newUser)
-    alert('Cuenta creada exitosamente.')
-    navigate('/login')
+    dispatch({ type: 'REGISTER_USER', user: newUser })
+    navigate('/dashboard', { replace: true })
   }
 
   return (
     <div className="login">
-
       <div className="login__brand">
         <div className="login__brand-content">
           <div className="login__logo">S</div>
@@ -69,7 +86,7 @@ function Register() {
           </p>
         </div>
       </div>
-      
+
       <div className="login__form-side">
         <form className="login__form" onSubmit={handleRegister}>
           <h2 className="login__form-title">Crear cuenta</h2>
@@ -104,7 +121,6 @@ function Register() {
               />
             </div>
 
-            {/* --- NUEVO CAMPO DE TELÉFONO --- */}
             <div className="login__field">
               <label className="login__label">Número de teléfono</label>
               <input
