@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useApp, genId, buildDebts } from '../context/AppContext'
+import { useApp, genId, buildDebts } from '../../context/AppContext'
 import './AddExpense.css'
 
 function AddExpense() {

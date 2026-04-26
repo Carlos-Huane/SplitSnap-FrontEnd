@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
+import { useApp } from '../../context/AppContext'
 import './DebtSummary.css'
 
 function DebtSummary() {

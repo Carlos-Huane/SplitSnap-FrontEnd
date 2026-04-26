@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { mockReceiptItems } from '../data/groups'
-import { useApp, genId, buildDebts } from '../context/AppContext'
+import { mockReceiptItems } from '../../data/groups'
+import { useApp, genId, buildDebts } from '../../context/AppContext'
 import './ReviewItems.css'
 
 const avatarColors = ['#F97316', '#3B82F6', '#22C55E', '#8B5CF6', '#EF4444']

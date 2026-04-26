@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useSidebar } from '../context/SidebarContext'
-import { transactionTypes } from '../data/historial'
-import { useApp } from '../context/AppContext'
+import { useSidebar } from '../../context/SidebarContext'
+import { transactionTypes } from '../../data/historial'
+import { useApp } from '../../context/AppContext'
 import './Historial.css'
 
 function Historial() {

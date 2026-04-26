@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
+import { useApp } from '../../context/AppContext'
 import './GroupDetail.css'
 
 function GroupDetail() {

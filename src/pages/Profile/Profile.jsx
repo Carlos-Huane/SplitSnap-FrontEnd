@@ -1,12 +1,12 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Profile.css";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../../context/AppContext";
 import {
   settingsMenu,
   privacyOptions,
   preferences,
-} from "../data/profile";
+} from "../../data/profile";
 
 const Icon = ({ name, size = 20, color = "currentColor" }) => {
   const icons = {

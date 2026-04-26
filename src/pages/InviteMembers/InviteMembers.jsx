@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
+import { useApp } from '../../context/AppContext'
 import './InviteMembers.css'
 
 const colors = ['#F97316', '#3B82F6', '#22C55E', '#8B5CF6', '#EF4444']

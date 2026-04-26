@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import '../styles/dashboard.css'
+import { useApp } from '../../context/AppContext'
+import '../../styles/dashboard.css'
 
 const getInitials = (fullName) =>
   fullName

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp, genId } from '../context/AppContext'
-import './Login.css'
+import { useApp, genId } from '../../context/AppContext'
+import '../Login/Login.css'
 import './Register.css'
 
 function Register() {
