@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useSidebar } from '../../context/SidebarContext'
+import { useApp } from '../../context/AppContext'
 import './Sidebar.css'
 
 const navItems = [
@@ -13,12 +14,19 @@ function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { isOpen, closeSidebar } = useSidebar()
+  const { dispatch } = useApp()
 
   const isActive = (match) => location.pathname === match || location.pathname.startsWith(match + '/')
 
   const handleNavigation = (path) => {
     navigate(path)
     closeSidebar()
+  }
+
+  const handleLogout = () => {
+    dispatch({ type: 'LOGOUT' })
+    closeSidebar()
+    navigate('/login', { replace: true })
   }
 
   return (
@@ -41,7 +49,7 @@ function Sidebar() {
         ))}
       </nav>
 
-      <button className="sidebar__logout" onClick={() => handleNavigation('/login')}>
+      <button className="sidebar__logout" onClick={handleLogout}>
         <span className="sidebar__logout-icon">🚪</span>
         <span>Cerrar sesión</span>
       </button>
