@@ -182,13 +182,13 @@ splitsnap-frontend/
 |------|-----------|--------|
 | `main` | Rama de producción estable | Activa |
 | `develop` | Rama de integración del equipo | Activa (rama principal de trabajo) |
-| `feat/base-datos-local-js` | Capa de datos mock | Fusionada en develop (PR #7) |
-| `feat/contraseña-section` | Pantalla de cambio de contraseña | Fusionada en develop (PR #10) |
-| `feat/dashboard` | Dashboard completo y responsivo | Fusionada en develop (PR #16) |
-| `feat/groups-section` | Sección completa de grupos | Fusionada en develop (PR #8) |
-| `feat/historial-section` | Sección de historial | Fusionada en develop (PR #11) |
-| `feat/perfil-section` | Sección de perfil de usuario | Fusionada en develop (PR #15) |
-| `feat/register` | Lógica de registro e inicio de sesión | Fusionada en develop (PR #14) |
+| `feature/base-datos-local-js` | Capa de datos mock | Fusionada en develop (PR #7) |
+| `feature/contraseña-section` | Pantalla de cambio de contraseña | Fusionada en develop (PR #10) |
+| `feature/dashboard` | Dashboard completo y responsivo | Fusionada en develop (PR #16) |
+| `feature/groups-section` | Sección completa de grupos | Fusionada en develop (PR #8) |
+| `feature/historial-section` | Sección de historial | Fusionada en develop (PR #11) |
+| `feature/perfil-section` | Sección de perfil de usuario | Fusionada en develop (PR #15) |
+| `feature/register` | Lógica de registro e inicio de sesión | Fusionada en develop (PR #14) |
 
 ### Ramas históricas (ya eliminadas / fusionadas)
 
@@ -199,7 +199,7 @@ splitsnap-frontend/
 | `feature/sidebar` | Componente Sidebar con navegación | #3 |
 | `feature/splash-screen` | Pantalla Splash con animación | #4 |
 | `design/diseño-mejorado` | Mejoras visuales y pantalla Login | #5 |
-| `feat/breve-documentacion` | Documentación inicial del proyecto | #6 |
+| `feature/breve-documentacion` | Documentación inicial del proyecto | #6 |
 
 ---
 
@@ -234,14 +234,14 @@ gantt
 | #3 | `feature/sidebar` | 2026-04-02 | Componente Sidebar con navegación e integración en el layout principal |
 | #4 | `feature/splash-screen` | 2026-04-02 | Pantalla Splash con animación de entrada |
 | #5 | `design/diseño-mejorado` | 2026-04-02 | Diseño mejorado general y pantalla de Login completa |
-| #6 | `feat/breve-documentacion` | 2026-04-02 | Documentación interna del proyecto |
-| #7 | `feat/base-datos-local-js` | 2026-04-12 | Base de datos local mock para integraciones JS |
-| #8 | `feat/groups-section` | 2026-04-13 | Sección completa de grupos con estado global y flujo funcional |
-| #10 | `feat/contraseña-section` | 2026-04-16 | Pantalla de cambio/recuperación de contraseña |
-| #11 | `feat/historial-section` | 2026-04-16 | Sección de historial de transacciones |
-| #14 | `feat/register` | 2026-04-19 | Lógica de registro e inicio de sesión con credenciales locales |
-| #15 | `feat/perfil-section` | 2026-04-16 | Sección de perfil diseñada y responsiva con interacciones |
-| #16 | `feat/dashboard` | 2026-04-19 | Dashboard completo con datos dinámicos y diseño responsivo |
+| #6 | `feature/breve-documentacion` | 2026-04-02 | Documentación interna del proyecto |
+| #7 | `feature/base-datos-local-js` | 2026-04-12 | Base de datos local mock para integraciones JS |
+| #8 | `feature/groups-section` | 2026-04-13 | Sección completa de grupos con estado global y flujo funcional |
+| #10 | `feature/contraseña-section` | 2026-04-16 | Pantalla de cambio/recuperación de contraseña |
+| #11 | `feature/historial-section` | 2026-04-16 | Sección de historial de transacciones |
+| #14 | `feature/register` | 2026-04-19 | Lógica de registro e inicio de sesión con credenciales locales |
+| #15 | `feature/perfil-section` | 2026-04-16 | Sección de perfil diseñada y responsiva con interacciones |
+| #16 | `feature/dashboard` | 2026-04-19 | Dashboard completo con datos dinámicos y diseño responsivo |
 
 ---
 
