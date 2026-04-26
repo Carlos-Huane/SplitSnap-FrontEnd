@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SplitSnap - Prototipo Interactivo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f0f0f;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Bar */
+    .topbar {
+      background: #1a1a1a;
+      border-bottom: 1px solid #2a2a2a;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      height: 56px;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .topbar-logo {
+      width: 32px;
+      height: 32px;
+      background: #F97316;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .topbar-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .topbar-subtitle {
+      font-size: 12px;
+      color: #888;
+    }
+
+    /* Device Toggle */
+    .device-toggle {
+      display: flex;
+      background: #2a2a2a;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .device-btn {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      color: #888;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .device-btn.active {
+      background: #F97316;
+      color: #fff;
+    }
+    .device-btn:hover:not(.active) {
+      color: #ccc;
+    }
+
+    /* Layout */
+    .app {
+      display: flex;
+      margin-top: 56px;
+      height: calc(100vh - 56px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      min-width: 260px;
+      background: #1a1a1a;
+      border-right: 1px solid #2a2a2a;
+      overflow-y: auto;
+      padding: 16px 0;
+    }
+    .sidebar-section {
+      margin-bottom: 4px;
+    }
+    .sidebar-section-title {
+      padding: 12px 20px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .sidebar-item {
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #aaa;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-item:hover {
+      background: #222;
+      color: #fff;
+    }
+    .sidebar-item.active {
+      background: #1f1a14;
+      color: #F97316;
+      border-left-color: #F97316;
+    }
+    .sidebar-item .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #444;
+      flex-shrink: 0;
+    }
+    .sidebar-item.active .dot {
+      background: #F97316;
+    }
+
+    /* Canvas */
+    .canvas {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      padding: 40px;
+      background: #0f0f0f;
+    }
+    .screen-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .screen-label {
+      font-size: 13px;
+      color: #666;
+      font-weight: 500;
+    }
+    .screen-frame {
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      position: relative;
+    }
+    .screen-frame.mobile {
+      width: 375px;
+      border: 2px solid #2a2a2a;
+    }
+    .screen-frame.desktop {
+      width: 1440px;
+      max-width: calc(100vw - 340px);
+      border: 2px solid #2a2a2a;
+    }
+    .screen-frame img {
+      width: 100%;
+      display: block;
+    }
+
+    /* Hotspots */
+    .hotspot {
+      position: absolute;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .hotspot:hover {
+      background: rgba(249, 115, 22, 0.15);
+      outline: 2px solid rgba(249, 115, 22, 0.4);
+    }
+
+    /* Navigation Arrows */
+    .nav-arrows {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .nav-arrow {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      color: #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.2s;
+    }
+    .nav-arrow:hover {
+      background: #F97316;
+      color: #fff;
+      border-color: #F97316;
+    }
+
+    /* Keyboard hint */
+    .keyboard-hint {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      font-size: 11px;
+      color: #555;
+      display: flex;
+      gap: 16px;
+    }
+    .keyboard-hint kbd {
+      background: #2a2a2a;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid #3a3a3a;
+      font-family: inherit;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">S</div>
+    <div>
+      <div class="topbar-title">SplitSnap</div>
+      <div class="topbar-subtitle">Prototipo Interactivo</div>
+    </div>
+  </div>
+  <div class="device-toggle">
+    <button class="device-btn active" id="btn-mobile" onclick="setDevice('mobile')">Mobile</button>
+    <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')">Desktop</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="canvas" id="canvas"></div>
+</div>
+
+<div class="keyboard-hint">
+  <span><kbd>&larr;</kbd> <kbd>&rarr;</kbd> Navegar</span>
+  <span><kbd>M</kbd> Mobile <kbd>D</kbd> Desktop</span>
+</div>
+
+<script>
+const screens = {
+  // === ONBOARDING ===
+  'splash': {
+    name: 'Splash',
+    section: 'Onboarding',
+    mobile: 'images/iLzPt.png',
+    desktop: 'images/kr3lR.png',
+    hotspots: {
+      mobile: [{ x:0,y:0,w:100,h:100,target:'login' }],
+      desktop: [{ x:0,y:0,w:100,h:100,target:'login' }]
+    }
+  },
+  'login': {
+    name: 'Login',
+    section: 'Onboarding',
+    mobile: 'images/BFG7I.png',
+    desktop: 'images/EVEFF.png',
+    hotspots: {
+      mobile: [
+        { x:10,y:72,w:80,h:6,target:'dashboard' },
+        { x:10,y:90,w:80,h:5,target:'register' }
+      ],
+      desktop: [
+        { x:55,y:62,w:25,h:6,target:'dashboard' },
+        { x:55,y:74,w:25,h:4,target:'register' }
+      ]
+    }
+  },
+  'register': {
+    name: 'Register',
+    section: 'Onboarding',
+    mobile: 'images/8Hmqm.png',
+    desktop: 'images/PgaHU.png',
+    hotspots: {
+      mobile: [
+        { x:10,y:78,w:80,h:6,target:'dashboard' },
+        { x:10,y:90,w:80,h:5,target:'login' }
+      ],
+      desktop: [
+        { x:55,y:72,w:25,h:6,target:'dashboard' },
+        { x:55,y:82,w:25,h:4,target:'login' }
+      ]
+    }
+  },
+
+  // === INICIO ===
+  'dashboard': {
+    name: 'Dashboard (Inicio)',
+    section: 'Inicio',
+    mobile: 'images/XESVa.png',
+    desktop: 'images/3wYwv.png',
+    hotspots: {
+      mobile: [
+        { x:0,y:93,w:25,h:7,target:'dashboard' },
+        { x:25,y:93,w:25,h:7,target:'mis-grupos' },
+        { x:50,y:93,w:25,h:7,target:'historial' },
+        { x:75,y:93,w:25,h:7,target:'perfil' }
+      ],
+      desktop: [
+        { x:0,y:13,w:18,h:5,target:'dashboard' },
+        { x:0,y:18,w:18,h:5,target:'mis-grupos' },
+        { x:0,y:23,w:18,h:5,target:'historial' },
+        { x:0,y:28,w:18,h:5,target:'perfil' }
+      ]
+    }
+  },
+
+  // === MIS GRUPOS ===
+  'mis-grupos': {
+    name: 'Mis Grupos',
+    section: 'Mis Grupos',
+    mobile: 'images/B2JNA.png',
+    desktop: 'images/5ZntS.png',
+    hotspots: {
+      mobile: [
+        { x:0,y:93,w:25,h:7,target:'dashboard' },
+        { x:25,y:93,w:25,h:7,target:'mis-grupos' },
+        { x:50,y:93,w:25,h:7,target:'historial' },
+        { x:75,y:93,w:25,h:7,target:'perfil' },
+        { x:5,y:25,w:90,h:12,target:'group-detail' },
+        { x:5,y:15,w:40,h:6,target:'crear-grupo' }
+      ],
+      desktop: [
+        { x:0,y:13,w:18,h:5,target:'dashboard' },
+        { x:0,y:18,w:18,h:5,target:'mis-grupos' },
+        { x:0,y:23,w:18,h:5,target:'historial' },
+        { x:0,y:28,w:18,h:5,target:'perfil' },
+        { x:20,y:20,w:35,h:15,target:'group-detail' }
+      ]
+    }
+  },
+  'group-detail': {
+    name: 'Detalle de Grupo',
+    section: 'Mis Grupos',
+    mobile: 'images/lNwFu.png',
+    desktop: 'images/3aOg3.png',
+    hotspots: {
+      mobile: [
+        { x:5,y:2,w:10,h:5,target:'mis-grupos' },
+        { x:50,y:70,w:45,h:8,target:'add-expense' },
+        { x:5,y:55,w:90,h:10,target:'debt-summary' }
+      ],
+      desktop: [
+        { x:0,y:13,w:18,h:5,target:'dashboard' },
+        { x:0,y:18,w:18,h:5,target:'mis-grupos' },
+        { x:0,y:23,w:18,h:5,target:'historial' },
+        { x:0,y:28,w:18,h:5,target:'perfil' },
+        { x:70,y:15,w:20,h:6,target:'add-expense' }
+      ]
+    }
+  },
+  'add-expense': {
+    name: 'Agregar Gasto',
+    section: 'Mis Grupos',
+    mobile: 'images/VNbA3.png',
+    desktop: 'images/lfwUf.png',
+    hotspots: {
+      mobile: [
+        { x:5,y:2,w:10,h:5,target:'group-detail' },
+        { x:5,y:55,w:90,h:8,target:'scan-receipt' },
+        { x:5,y:80,w:90,h:7,target:'group-detail' }
+      ],
+      desktop: [
+        { x:0,y:13,w:18,h:5,target:'dashboard' },
+        { x:0,y:18,w:18,h:5,target:'mis-grupos' },
+        { x:0,y:23,w:18,h:5,target:'historial' },
+        { x:0,y:28,w:18,h:5,target:'perfil' }
+      ]
+    }
+  },
+  'scan-receipt': {
+    name: 'Escanear Recibo',
+    section: 'Mis Grupos',
+    mobile: 'images/v7FYS.png',
+    desktop: 'images/mvQy0.png',
+    hotspots: {
+      mobile: [
+        { x:5,y:2,w:10,h:5,target:'add-expense' },
+        { x:20,y:80,w:60,h:8,target:'revisar-recibo' }
+      ],
+      desktop: [
+        { x:0,y:13,w:18,h:5,target:'dashboard' },
+        { x:0,y:18,w:18,h:5,target:'mis-grupos' },
+        { x:0,y:23,w:18,h:5,target:'historial' },
+        { x:0,y:28,w:18,h:5,target:'perfil' }
+      ]
+    }
+  },
+  'revisar-recibo': {
+    name: 'Revisar Recibo',
+    section: 'Mis Grupos',
+    mobile: 'images/MeQLz.png',
+    desktop: 'images/u3ptj.png',
+    hotspots: {
+      mobile: [
+        { x:5,y:2,w:10,h:5,target:'scan-receipt' },
+        { x:5,y:85,w:90,h:7,target:'group-detail' }
+      ],
+      desktop: [
+        { x:0,y:13,w:18,h:5,target:'dashboard' },
+        { x:0,y:18,w:18,h:5,target:'mis-grupos' },
+        { x:0,y:23,w:18,h:5,target:'historial' },
+        { x:0,y:28,w:18,h:5,target:'perfil' }
+      ]
+    }
+  },
+  'debt-summary': {
+    name: 'Resumen de Deudas',
+    section: 'Mis Grupos',
+    mobile: 'images/nES2K.png',
+    desktop: 'images/v1FEq.png',
+    hotspots: {
+      mobile: [
+        { x:5,y:2,w:10,h:5,target:'group-detail' }
+      ],
+      desktop: [
+        { x:0,y:13,w:18,h:5,target:'dashboard' },
+        { x:0,y:18,w:18,h:5,target:'mis-grupos' },
+        { x:0,y:23,w:18,h:5,target:'historial' },
+        { x:0,y:28,w:18,h:5,target:'perfil' }
+      ]
+    }
+  },
+  'crear-grupo': {
+    name: 'Crear Grupo',
+    section: 'Mis Grupos',
+    mobile: 'images/KCvAl.png',
+    desktop: 'images/mOfoI.png',
+    hotspots: {
+      mobile: [
+        { x:5,y:2,w:10,h:5,target:'mis-grupos' },
+        { x:5,y:80,w:90,h:7,target:'invitar-miembros' }
+      ],
+      desktop: [
+        { x:0,y:13,w:18,h:5,target:'dashboard' },
+        { x:0,y:18,w:18,h:5,target:'mis-grupos' },
+        { x:0,y:23,w:18,h:5,target:'historial' },
+        { x:0,y:28,w:18,h:5,target:'perfil' }
+      ]
+    }
+  },
+  'invitar-miembros': {
+    name: 'Invitar Miembros',
+    section: 'Mis Grupos',
+    mobile: 'images/gKXmG.png',
+    desktop: 'images/uuPXb.png',
+    hotspots: {
+      mobile: [
+        { x:5,y:2,w:10,h:5,target:'crear-grupo' },
+        { x:5,y:85,w:90,h:7,target:'group-detail' }
+      ],
+      desktop: [
+        { x:0,y:13,w:18,h:5,target:'dashboard' },
+        { x:0,y:18,w:18,h:5,target:'mis-grupos' },
+        { x:0,y:23,w:18,h:5,target:'historial' },
+        { x:0,y:28,w:18,h:5,target:'perfil' }
+      ]
+    }
+  },
+  'estado-vacio': {
+    name: 'Estado Vacio',
+    section: 'Mis Grupos',
+    mobile: 'images/SUaP7.png',
+    desktop: null,
+    hotspots: {
+      mobile: [
+        { x:0,y:93,w:25,h:7,target:'dashboard' },
+        { x:25,y:93,w:25,h:7,target:'mis-grupos' },
+        { x:50,y:93,w:25,h:7,target:'historial' },
+        { x:75,y:93,w:25,h:7,target:'perfil' },
+        { x:20,y:60,w:60,h:8,target:'crear-grupo' }
+      ],
+      desktop: []
+    }
+  },
+
+  // === HISTORIAL ===
+  'historial': {
+    name: 'Historial',
+    section: 'Historial',
+    mobile: 'images/asEqI.png',
+    desktop: 'images/tJ5E8.png',
+    hotspots: {
+      mobile: [
+        { x:0,y:93,w:25,h:7,target:'dashboard' },
+        { x:25,y:93,w:25,h:7,target:'mis-grupos' },
+        { x:50,y:93,w:25,h:7,target:'historial' },
+        { x:75,y:93,w:25,h:7,target:'perfil' }
+      ],
+      desktop: [
+        { x:0,y:13,w:18,h:5,target:'dashboard' },
+        { x:0,y:18,w:18,h:5,target:'mis-grupos' },
+        { x:0,y:23,w:18,h:5,target:'historial' },
+        { x:0,y:28,w:18,h:5,target:'perfil' }
+      ]
+    }
+  },
+
+  // === PERFIL ===
+  'perfil': {
+    name: 'Perfil',
+    section: 'Perfil',
+    mobile: 'images/v9nlt.png',
+    desktop: 'images/xqDTU.png',
+    hotspots: {
+      mobile: [
+        { x:5,y:2,w:10,h:5,target:'dashboard' }
+      ],
+      desktop: [
+        { x:0,y:13,w:18,h:5,target:'dashboard' },
+        { x:0,y:18,w:18,h:5,target:'mis-grupos' },
+        { x:0,y:23,w:18,h:5,target:'historial' },
+        { x:0,y:28,w:18,h:5,target:'perfil' }
+      ]
+    }
+  }
+};
+
+let currentScreen = 'splash';
+let currentDevice = 'mobile';
+const screenKeys = Object.keys(screens);
+
+function setDevice(device) {
+  const s = screens[currentScreen];
+  if (device === 'desktop' && !s.desktop) return;
+  currentDevice = device;
+  document.getElementById('btn-mobile').classList.toggle('active', device === 'mobile');
+  document.getElementById('btn-desktop').classList.toggle('active', device === 'desktop');
+  renderScreen();
+}
+
+function goToScreen(key) {
+  if (!screens[key]) return;
+  currentScreen = key;
+  if (currentDevice === 'desktop' && !screens[key].desktop) {
+    currentDevice = 'mobile';
+    document.getElementById('btn-mobile').classList.add('active');
+    document.getElementById('btn-desktop').classList.remove('active');
+  }
+  renderScreen();
+  renderSidebar();
+}
+
+function navigate(dir) {
+  const idx = screenKeys.indexOf(currentScreen);
+  const newIdx = idx + dir;
+  if (newIdx >= 0 && newIdx < screenKeys.length) {
+    goToScreen(screenKeys[newIdx]);
+  }
+}
+
+function renderSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  let html = '';
+  let lastSection = '';
+
+  for (const [key, screen] of Object.entries(screens)) {
+    if (screen.section !== lastSection) {
+      lastSection = screen.section;
+      html += '<div class="sidebar-section"><div class="sidebar-section-title">' + screen.section + '</div></div>';
+    }
+    const cls = key === currentScreen ? 'active' : '';
+    html += '<div class="sidebar-item ' + cls + '" onclick="goToScreen(\'' + key + '\')">' +
+      '<span class="dot"></span>' + screen.name + '</div>';
+  }
+  sidebar.innerHTML = html;
+}
+
+function renderScreen() {
+  const canvas = document.getElementById('canvas');
+  const screen = screens[currentScreen];
+  const isDesktop = currentDevice === 'desktop' && screen.desktop;
+  const imgSrc = isDesktop ? screen.desktop : screen.mobile;
+  const frameClass = isDesktop ? 'desktop' : 'mobile';
+  const dims = isDesktop ? '1440x900' : '375x812';
+
+  let hs = '';
+  const hotspots = isDesktop ? (screen.hotspots.desktop || []) : (screen.hotspots.mobile || []);
+  for (const h of hotspots) {
+    const title = screens[h.target] ? screens[h.target].name : h.target;
+    hs += '<div class="hotspot" style="left:' + h.x + '%;top:' + h.y + '%;width:' + h.w + '%;height:' + h.h + '%" onclick="goToScreen(\'' + h.target + '\')" title="Ir a: ' + title + '"></div>';
+  }
+
+  canvas.innerHTML =
+    '<div class="screen-container" style="display:flex">' +
+      '<div class="screen-label">' + screen.section + ' / ' + screen.name + ' — ' + dims + '</div>' +
+      '<div class="screen-frame ' + frameClass + '">' +
+        '<img src="' + imgSrc + '" alt="' + screen.name + '">' +
+        hs +
+      '</div>' +
+      '<div class="nav-arrows">' +
+        '<div class="nav-arrow" onclick="navigate(-1)">&larr;</div>' +
+        '<div class="nav-arrow" onclick="navigate(1)">&rarr;</div>' +
+      '</div>' +
+    '</div>';
+
+  renderSidebar();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowLeft') navigate(-1);
+  if (e.key === 'ArrowRight') navigate(1);
+  if (e.key === 'm' || e.key === 'M') setDevice('mobile');
+  if (e.key === 'd' || e.key === 'D') setDevice('desktop');
+});
+
+renderScreen();
+</script>
+</body>
+</html>
