@@ -166,20 +166,168 @@
 
 /* --- QUERIES DE CAMBIO DE ESTADO --- */
 
+.profile-desktop-header {
+  display: none;
+}
+
 /* VISTA PC: Aquí cambiamos a dos columnas */
 @media (min-width: 1024px) {
-  .profile-layout {
-    flex-direction: row; /* Dos columnas */
-    padding: var(--spacing-2xl) var(--spacing-md);
-    align-items: flex-start;
-  }
-  
-  .user-card {
-    width: 700px; 
+  .profile-container {
+    padding: 48px 32px 64px;
+    justify-content: flex-start;
   }
 
+  .profile-desktop-header {
+    display: block;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto 32px;
+    padding: 0;
+  }
+
+  .profile-desktop-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+
+  .profile-desktop-sub {
+    font-size: 15px;
+    color: var(--color-text-secondary);
+    margin: 6px 0 0;
+  }
+
+  .profile-layout {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 40px;
+    padding: 0;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* Columna izquierda: tarjeta del usuario sticky */
+  .user-card {
+    width: 460px;
+    max-width: 460px;
+    flex-shrink: 0;
+    padding: 40px 32px;
+    position: sticky;
+    top: 32px;
+    border: 1px solid var(--color-border-light);
+  }
+
+  .avatar-circle {
+    width: 112px;
+    height: 112px;
+    font-size: 34px;
+  }
+
+  .user-name {
+    font-size: 24px;
+  }
+
+  .user-email {
+    font-size: 14px;
+    margin: 8px 0 24px;
+  }
+
+  .edit-btn {
+    padding: 12px 22px;
+    margin-bottom: 28px;
+    font-size: 14px;
+  }
+
+  .stats-row {
+    padding-top: 24px;
+    gap: 4px;
+    align-items: stretch;
+  }
+
+  .stat-item {
+    flex: 1;
+    align-items: center;
+    text-align: center;
+    min-width: 0;
+    padding: 0 4px;
+  }
+
+  .stat-value {
+    font-size: 17px;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-top: 6px;
+  }
+
+  /* Columna derecha: configuración */
   .config-section {
-    max-width: none; 
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .section-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 20px;
+  }
+
+  .accordion-group {
+    gap: 12px;
+  }
+
+  .accordion-item {
+    border: 1px solid var(--color-border-light);
+    border-radius: 12px;
+  }
+
+  .accordion-header {
+    padding: 18px 20px;
+    font-size: 15px;
+  }
+
+  .accordion-header:hover {
+    background: var(--color-bg-light);
+  }
+
+  .accordion-content {
+    padding: 4px 20px 20px;
+    border-top: 1px solid var(--color-border-light);
+    background: #FAFAFA;
+  }
+
+  /* Forms y créditos en desktop: aprovechan el ancho */
+  .edit-profile-form {
+    align-items: stretch;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .form-avatar-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: flex-start;
+  }
+
+  .credits-packages {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .credits-balance-card {
+    padding: 20px 24px;
+  }
+
+  .credits-balance-amount {
+    font-size: 28px;
   }
 }
 
@@ -358,4 +506,142 @@ input:checked + .slider:before { transform: translateX(20px); }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-5px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* === CRÉDITOS SPLITSNAP === */
+.profile-toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-secondary);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  z-index: 50;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+
+.credits-badge {
+  background: var(--color-primary);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 8px;
+}
+
+.credits-balance-card {
+  background: linear-gradient(90deg, #F97316, #EA6C0B);
+  color: white;
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.credits-balance-label {
+  font-size: 12px;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.credits-balance-amount {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 4px 0;
+}
+
+.credits-balance-sub {
+  font-size: 12px;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.credits-balance-icon {
+  font-size: 32px;
+}
+
+.credits-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.credits-packages {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.credits-package-btn {
+  background: white;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.credits-package-btn:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.credits-package-amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.credits-package-price {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.credits-custom {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  margin-bottom: 8px;
+}
+
+.credits-custom .profile-input {
+  flex: 1;
+  margin: 0;
+}
+
+.credits-history {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.credits-history-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--color-bg-light);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.credits-empty {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: 12px 0;
 }
