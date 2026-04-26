@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { mockReceiptItems } from '../data/groups'
-import { users, currentUser } from '../data/global'
 import { useApp, genId, buildDebts } from '../context/AppContext'
 import './ReviewItems.css'
 
@@ -11,7 +10,8 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() || '?'
 function ReviewItems() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const { groups, dispatch } = useApp()
+  const { groups, allUsers, currentUser, dispatch } = useApp()
+  const users = allUsers
 
   const group = groups.find(g => g.id === id)
   const members = group
@@ -126,7 +126,7 @@ function ReviewItems() {
                 <div className="review-item__info">
                   <p className="review-item__name">{item.name}</p>
                   <p className="review-item__price">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    S/ {(item.price * item.quantity).toFixed(2)}
                     {item.quantity > 1 && (
                       <span className="review-item__qty"> ×{item.quantity}</span>
                     )}
@@ -174,7 +174,7 @@ function ReviewItems() {
                   {assignedCount} ítem{assignedCount !== 1 ? 's' : ''}
                 </p>
               </div>
-              <span className="summary-row__amount">${memberTotal.toFixed(2)}</span>
+              <span className="summary-row__amount">S/ {memberTotal.toFixed(2)}</span>
             </div>
           ))}
         </div>
@@ -184,7 +184,7 @@ function ReviewItems() {
       <div className="review-items__footer">
         <div className="review-items__total">
           <span className="review-items__total-label">Total</span>
-          <span className="review-items__total-amount">${total.toFixed(2)}</span>
+          <span className="review-items__total-amount">S/ {total.toFixed(2)}</span>
         </div>
         <button className="review-items__confirm" onClick={handleConfirm}>
           Confirmar y dividir
