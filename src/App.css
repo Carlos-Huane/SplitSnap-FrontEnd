@@ -25,3 +25,33 @@
     display: block;
   }
 }
+
+.app-menu-toggle {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .app-menu-toggle {
+    display: flex;
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-background);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+    font-size: 22px;
+    line-height: 1;
+    z-index: 997;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+
+  .app-menu-toggle:hover {
+    background: var(--color-bg-light);
+  }
+}
