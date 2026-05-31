@@ -1,5 +1,12 @@
 import { createContext, useContext, useReducer, useEffect } from 'react'
 import { users as seedUsers } from '../data/global'
+import {
+  getToken,
+  setToken as persistToken,
+  clearToken,
+  isAuthenticated,
+  getCurrentUserFromToken,
+} from '../services/auth.service'
 
 const initialState = {
   groups: [],
@@ -77,17 +84,34 @@ function reducer(state, action) {
     case 'SET_AVATAR':
       return { ...state, profileAvatar: action.avatar }
 
-    case 'LOGIN':
-      return { ...state, currentUserId: action.userId }
+    case 'LOGIN': {
+      // Soporta dos formatos para compatibilidad durante migracion:
+      //  - viejo (mock): { userId }
+      //  - nuevo (backend): { userId, user, token } donde user trae { id, name, email, phone? }
+      if (action.token) persistToken(action.token)
+      const customUsers = action.user
+        ? upsertUser(state.customUsers, action.user)
+        : state.customUsers
+      return {
+        ...state,
+        currentUserId: action.userId,
+        customUsers,
+      }
+    }
 
     case 'LOGOUT':
+      clearToken()
       return { ...state, currentUserId: null }
 
     case 'REGISTER_USER': {
+      // Soporta dos formatos:
+      //  - viejo (mock): { user }  -> user creado localmente con id propio
+      //  - nuevo (backend): { user, token } donde user.id viene del backend
+      if (action.token) persistToken(action.token)
       const newUser = action.user
       return {
         ...state,
-        customUsers: [...state.customUsers, newUser],
+        customUsers: upsertUser(state.customUsers, newUser),
         currentUserId: newUser.id,
       }
     }
@@ -107,6 +131,13 @@ function reducer(state, action) {
     default:
       return state
   }
+}
+
+function upsertUser(list, user) {
+  if (!user || !user.id) return list
+  const exists = list.some(u => u.id === user.id)
+  if (exists) return list.map(u => (u.id === user.id ? { ...u, ...user } : u))
+  return [...list, user]
 }
 
 export const genId = (prefix = 'x') => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
@@ -132,9 +163,26 @@ export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState, (init) => {
     try {
       const saved = localStorage.getItem('splitsnap_v1')
-      if (!saved) return init
-      const parsed = JSON.parse(saved)
-      return { ...init, ...parsed }
+      const base = saved ? { ...init, ...JSON.parse(saved) } : init
+
+      // Si hay un token valido pero no hay currentUserId, intentar recuperar del JWT.
+      if (!base.currentUserId && isAuthenticated()) {
+        const fromToken = getCurrentUserFromToken()
+        if (fromToken) {
+          return {
+            ...base,
+            currentUserId: fromToken.id,
+            customUsers: upsertUser(base.customUsers || [], fromToken),
+          }
+        }
+      }
+
+      // Si hay currentUserId pero el token expiro -> limpiar sesion
+      if (base.currentUserId && getToken() && !isAuthenticated()) {
+        return { ...base, currentUserId: null }
+      }
+
+      return base
     } catch {
       return init
     }
@@ -143,6 +191,13 @@ export function AppProvider({ children }) {
   useEffect(() => {
     localStorage.setItem('splitsnap_v1', JSON.stringify(state))
   }, [state])
+
+  // Si el backend devolvio 401 (token invalido/expirado) -> auto-logout
+  useEffect(() => {
+    const handler = () => dispatch({ type: 'LOGOUT' })
+    window.addEventListener('auth:expired', handler)
+    return () => window.removeEventListener('auth:expired', handler)
+  }, [])
 
   const allUsers = [...seedUsers, ...state.customUsers].map(u => ({
     ...u,
