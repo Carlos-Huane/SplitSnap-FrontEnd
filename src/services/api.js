@@ -6,8 +6,13 @@ export const getToken = () => localStorage.getItem(TOKEN_KEY)
 export const setToken = (token) => localStorage.setItem(TOKEN_KEY, token)
 export const clearToken = () => localStorage.removeItem(TOKEN_KEY)
 
+// Backend desplegado en Railway. Es el fallback por default para que
+// cualquier integrante pueda clonar el repo y arrancar sin crear .env.
+// Para apuntar a un backend local, crea un .env con VITE_API_URL=http://localhost:8080
+const DEFAULT_API_URL = 'https://splitsnap-backend-production-7213.up.railway.app'
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_URL || DEFAULT_API_URL,
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 })
