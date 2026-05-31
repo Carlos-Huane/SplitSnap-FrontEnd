@@ -124,6 +124,36 @@
   font-size: var(--font-sm);
 }
 
+/* Preview */
+.scan-receipt__preview {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+}
+
+/* Error */
+.scan-receipt__error {
+  margin: 0 16px 16px;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--radius-md);
+  color: #fecaca;
+  font-size: var(--font-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scan-receipt__error-link {
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-sm);
+  text-decoration: underline;
+  align-self: flex-start;
+}
+
 /* Controls */
 .scan-receipt__hint {
   text-align: center;

@@ -509,6 +509,67 @@ npm run lint      # Ejecutar ESLint
 
 Usar cualquiera de los usuarios listados en la [sección de datos mock](#10-capa-de-datos-mock) con contraseña `123456`.
 
+Para integrar con el backend real (`carlos@splitsnap.com / test123`, `ana@splitsnap.com / test123`, `juan@splitsnap.com / test123`).
+
+---
+
+## 14. Conexión con el backend
+
+Desde el sprint de integración, el frontend consume el backend Spring Boot vía un cliente axios centralizado en `src/services/`. Cada dominio tiene su archivo:
+
+| Servicio | Archivo |
+|---|---|
+| Auth (login, register, JWT) | `src/services/auth.service.js` |
+| Usuarios y perfil | `src/services/users.service.js` |
+| Grupos | `src/services/groups.service.js` |
+| Gastos + OCR | `src/services/expenses.service.js` |
+| Deudas y pagos | `src/services/debts.service.js` |
+| Créditos | `src/services/credits.service.js` |
+| Transacciones | `src/services/transactions.service.js` |
+
+### Variable de entorno requerida
+
+Copia `.env.example` a `.env` y define `VITE_API_URL`:
+
+```bash
+# Backend local
+VITE_API_URL=http://localhost:8080
+
+# Backend en producción (Railway)
+VITE_API_URL=https://splitsnap-backend-production-7213.up.railway.app
+```
+
+El cliente axios inyecta automáticamente el JWT en cada request y maneja respuestas 401 con auto-logout.
+
+---
+
+## 15. OCR de recibos (HU-F4)
+
+La pantalla `/groups/:id/scan` permite escanear un ticket. El backend usa **Google Cloud Vision API** para extraer el texto y devuelve:
+
+```json
+{
+  "description": "primera línea del recibo",
+  "detectedAmount": 92.04,
+  "confidenceScore": "extracted",
+  "extractedItems": ["texto crudo extraído..."]
+}
+```
+
+> ⚠️ **Limitación conocida**: Cloud Vision con `TEXT_DETECTION` extrae texto plano, no items estructurados. El monto total se detecta vía regex sobre palabras clave (`total`, `neto`, `pago`). La pantalla `/groups/:id/scan/review` permite al usuario corregir descripción, monto y dividir entre los miembros del grupo.
+
+### Setup para testear OCR localmente
+
+El backend desplegado en Railway **ya tiene Google Cloud Vision configurado** vía la variable de entorno `GOOGLE_APPLICATION_CREDENTIALS_JSON` (contiene el contenido del service account). Cualquier integrante del frontend que apunte `VITE_API_URL` al backend de Railway puede usar el OCR sin configuración adicional.
+
+Si necesitas levantar el backend local con OCR (no recomendado para desarrollo del frontend), revisa el README del repo `SplitSnap-BackEnd` para los pasos de creación del service account en Google Cloud.
+
+### Free tier y costos
+
+- Cloud Vision: **1000 imágenes/mes gratis** (más que suficiente para todo el sprint).
+- Free Trial GCP: **$300 USD en créditos** por 90 días.
+- Para la exposición y desarrollo, el costo esperado es **$0**.
+
 ---
 
 *Documentación generada el 2026-04-24 — Rama: `develop`*
