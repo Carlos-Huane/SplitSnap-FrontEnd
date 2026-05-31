@@ -1,13 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useSidebar } from '../../context/SidebarContext'
 import { transactionTypes } from '../../data/historial'
 import { useApp } from '../../context/AppContext'
 import './Historial.css'
 
 function Historial() {
   const navigate = useNavigate()
-  const { toggleSidebar } = useSidebar()
   const { groups, expenses, debts, allUsers, currentUser } = useApp()
   const users = allUsers
 
@@ -93,9 +91,6 @@ function Historial() {
           <h1>Historial de Transacciones</h1>
           <p>Revisa todos tus movimientos, gastos y pagos en un solo lugar</p>
         </div>
-        <button className="historial-menu-btn" onClick={toggleSidebar} title="Abrir menú">
-          ☰
-        </button>
       </div>
 
       {!hasData ? (

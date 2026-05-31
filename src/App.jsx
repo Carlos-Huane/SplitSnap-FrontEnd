@@ -29,6 +29,21 @@ function SidebarOverlay() {
   return <div className="app-overlay" onClick={closeSidebar} />
 }
 
+function MenuToggle() {
+  const { isOpen, toggleSidebar } = useSidebar()
+  if (isOpen) return null
+  return (
+    <button
+      type="button"
+      className="app-menu-toggle"
+      onClick={toggleSidebar}
+      aria-label="Abrir menú"
+    >
+      ☰
+    </button>
+  )
+}
+
 const protect = (el) => <RequireAuth>{el}</RequireAuth>
 
 function AppRoutes() {
@@ -38,6 +53,7 @@ function AppRoutes() {
   return (
     <div className="app-layout">
       {showSidebar && <Sidebar />}
+      {showSidebar && <MenuToggle />}
       <SidebarOverlay />
       <main className="app-content">
         <Routes>
