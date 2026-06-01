@@ -38,10 +38,32 @@ export const getDebts = async (groupId, status) => {
   return response.json();
 };
 
-// Dejo las firmas listas para tus próximas historias (HU-F5.2 y HU-F5.3)
+/**
+ * Marcar deuda como pagada (manual)
+ * @param {string} groupId - ID del grupo
+ * @param {string} debtId - ID de la deuda
+ * @param {string} paidWith - Método de pago ('yape', 'paypal', 'efectivo')
+ * @returns {Promise<Object>}
+ */
 export const markDebtAsPaid = async (groupId, debtId, paidWith) => {
-  // Se implementará en HU-F5.2
-}
+  const response = await fetch(`${API_URL}/groups/${groupId}/debts/${debtId}/mark-paid`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ paidWith }),
+  });
+
+  if (!response.ok) {
+    // Manejo de errores específicos según HU-F5.2
+    if (response.status === 403) throw new Error('403');
+    if (response.status === 409) throw new Error('409');
+    
+    // Para otros errores
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Error al marcar la deuda como pagada');
+  }
+
+  return response.json();
+};
 
 export const payDebtWithCredits = async (groupId, debtId) => {
   // Se implementará en HU-F5.3

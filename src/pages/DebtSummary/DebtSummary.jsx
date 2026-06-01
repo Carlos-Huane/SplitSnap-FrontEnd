@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-
+import { useApp } from '../../context/AppContext' // ¡Faltaba importar el context!
+import { getDebts, markDebtAsPaid } from '../../api/debtsService'; // Importamos la nueva función
+import MarkAsPaidModal from './MarkAsPaidModal'; // Importamos el modal
 import './DebtSummary.css'
-import { getDebts } from '../../api/debtsService';
 
 function DebtSummary() {
   const navigate = useNavigate()
   const { id: groupId } = useParams()
   
-  // Extraemos lo necesario del context (ya no sacamos "debts" ni "allUsers" de aquí)
   const { groups, expenses, credits, currentUser, dispatch } = useApp()
 
   const group = groups.find(g => g.id === groupId)
@@ -16,46 +16,49 @@ function DebtSummary() {
   const groupTotal = groupExpenses.reduce((sum, e) => sum + e.amount, 0)
   const memberCount = group?.memberIds.length || 0
 
-  // --- ESTADOS LOCALES PARA LA API ---
+  // --- ESTADOS LOCALES ---
   const [debts, setDebts] = useState([])
-  const [statusTab, setStatusTab] = useState('PENDING') // 'PENDING' o 'PAID'
+  const [statusTab, setStatusTab] = useState('PENDING') 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [toast, setToast] = useState('')
 
-  // --- EFECTO: LLAMADA A LA API ---
-  useEffect(() => {
-    const fetchDebts = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const data = await getDebts(groupId, statusTab)
-        
-        // ADAPTER: El backend envía { fromUser: { id, name... } }
-        // El front necesita fromUserId (flat)
-        const adaptedDebts = data.map(debt => ({
-          ...debt,
-          fromUserId: debt.fromUser.id,
-          toUserId: debt.toUser.id,
-          // Mantenemos el objeto original por si necesitamos el nombre/avatar
-          fromUser: debt.fromUser,
-          toUser: debt.toUser
-        }))
-        
-        setDebts(adaptedDebts)
-      } catch (err) {
-        if (err.message === '403') {
-          setError('No tienes acceso a este grupo.')
-        } else {
-          setError(err.message || 'Ocurrió un error al cargar las deudas.')
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
+  // --- ESTADOS PARA EL MODAL DE PAGO (HU-F5.2) ---
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedDebtId, setSelectedDebtId] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // --- EFECTO: LLAMADA A LA API ---
+  // Usamos useCallback para poder llamar a fetchDebts después de un pago exitoso
+  const fetchDebts = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await getDebts(groupId, statusTab)
+      
+      const adaptedDebts = data.map(debt => ({
+        ...debt,
+        fromUserId: debt.fromUser.id,
+        toUserId: debt.toUser.id,
+        fromUser: debt.fromUser,
+        toUser: debt.toUser
+      }))
+      
+      setDebts(adaptedDebts)
+    } catch (err) {
+      if (err.message === '403') {
+        setError('No tienes acceso a este grupo.')
+      } else {
+        setError(err.message || 'Ocurrió un error al cargar las deudas.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [groupId, statusTab])
+
+  useEffect(() => {
     if (groupId) fetchDebts()
-  }, [groupId, statusTab]) // Se vuelve a llamar si cambia el ID o la pestaña
+  }, [fetchDebts])
 
   // --- FUNCIONES AUXILIARES ---
   const showToast = (msg) => {
@@ -63,8 +66,35 @@ function DebtSummary() {
     setTimeout(() => setToast(''), 3000)
   }
 
-  // (Placeholders para tus siguientes HUs)
-  const markAsPaid = (debtId) => dispatch({ type: 'MARK_DEBT_PAID', debtId })
+  // --- LÓGICA DE PAGO MANUAL (HU-F5.2) ---
+  const handleOpenModal = (debtId) => {
+    setSelectedDebtId(debtId)
+    setIsModalOpen(true)
+  }
+
+  const handleConfirmMarkPaid = async (paidWith) => {
+    setIsSubmitting(true)
+    try {
+      await markDebtAsPaid(groupId, selectedDebtId, paidWith)
+      showToast('✓ Deuda marcada como pagada')
+      setIsModalOpen(false)
+      fetchDebts() // Refresca la lista desde el backend
+    } catch (err) {
+      if (err.message === '403') {
+        alert('Solo el deudor puede marcar esta deuda como pagada.')
+      } else if (err.message === '409') {
+        alert('Esta deuda ya estaba pagada.')
+        setIsModalOpen(false)
+        fetchDebts() 
+      } else {
+        alert(err.message)
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Placeholder para HU-F5.3
   const payWithCredits = (debt) => {
     if (credits < debt.amount) {
       showToast(`Créditos insuficientes. Te faltan S/ ${(debt.amount - credits).toFixed(2)}.`)
@@ -73,7 +103,7 @@ function DebtSummary() {
     // Lógica futura...
   }
 
-  // Funciones visuales usando los datos que vienen dentro de fromUser/toUser
+  // Visuales
   const getName = (userObj) => {
     if (!userObj) return 'Desconocido'
     return userObj.id === currentUser.id ? 'Tú' : userObj.name.split(' ')[0]
@@ -87,7 +117,6 @@ function DebtSummary() {
     return palette[Math.abs(hash) % palette.length]
   }
 
-  // --- CÁLCULO DE BALANCES (Solo para la pestaña PENDIENTES) ---
   const memberBalances = statusTab === 'PENDING' 
     ? (group?.memberIds || []).map(uid => {
         const owed = debts.filter(d => d.toUserId === uid).reduce((s, d) => s + d.amount, 0)
@@ -99,6 +128,8 @@ function DebtSummary() {
   // --- COMPONENTE DE TARJETA ---
   const DebtCard = ({ debt }) => {
     const isPaid = statusTab === 'PAID'
+    const isDebtor = debt.fromUserId === currentUser.id // Verificamos si es el deudor
+
     return (
       <div className={`debt-card ${isPaid ? 'debt-card--paid' : ''}`}>
         <div className="debt-card__row">
@@ -130,27 +161,38 @@ function DebtSummary() {
         {!isPaid && (
           <>
             <div className="debt-card__actions">
-              <button
-                className="debt-card__pay-btn debt-card__pay-btn--credits"
-                onClick={() => payWithCredits(debt)}
-                disabled={credits < debt.amount}
-              >
-                💰 Pagar con créditos · S/{debt.amount.toFixed(2)}
-              </button>
+              {isDebtor && (
+                <button
+                  className="debt-card__pay-btn debt-card__pay-btn--credits"
+                  onClick={() => payWithCredits(debt)}
+                  disabled={credits < debt.amount}
+                >
+                  💰 Pagar con créditos · S/{debt.amount.toFixed(2)}
+                </button>
+              )}
             </div>
-            <p className="debt-card__credits-hint">
-              Saldo: {credits.toFixed(2)} créditos
-            </p>
-            <button className="debt-card__mark-paid" onClick={() => markAsPaid(debt.id)}>
-              ☑ Marcar como pagado (manual)
-            </button>
+            
+            {/* Solo mostramos el botón si el usuario actual es quien debe */}
+            {isDebtor ? (
+              <>
+                <p className="debt-card__credits-hint">
+                  Saldo: {credits.toFixed(2)} créditos
+                </p>
+                <button className="debt-card__mark-paid" onClick={() => handleOpenModal(debt.id)}>
+                  ☑ Marcar como pagado (manual)
+                </button>
+              </>
+            ) : (
+              <p className="debt-card__waiting-text" style={{ fontSize: '12px', color: '#666', textAlign: 'center', marginTop: '10px' }}>
+                Esperando el pago de {getName(debt.fromUser)}...
+              </p>
+            )}
           </>
         )}
       </div>
     )
   }
 
-  // --- RENDERIZADO DE ERROR 403 ---
   if (error === 'No tienes acceso a este grupo.') {
     return (
       <div className="debt-summary__not-found" style={{ textAlign: 'center', padding: '3rem' }}>
@@ -181,7 +223,6 @@ function DebtSummary() {
         </span>
       </div>
 
-      {/* TABS REQUERIDOS POR HU-F5.1 */}
       <div className="debt-summary__tabs">
         <button
           className={`debt-summary__tab ${statusTab === 'PENDING' ? 'active' : ''}`}
@@ -197,15 +238,12 @@ function DebtSummary() {
         </button>
       </div>
 
-      {/* CONTENIDO */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '2rem' }}>Cargando deudas...</div>
       ) : error ? (
         <div style={{ textAlign: 'center', padding: '2rem', color: 'red' }}>{error}</div>
       ) : (
         <div className="debt-summary__body">
-          
-          {/* TAB: PENDIENTES */}
           {statusTab === 'PENDING' && (
             <>
               {memberBalances.some(b => b.net !== 0) && (
@@ -213,7 +251,6 @@ function DebtSummary() {
                   <p className="debt-summary__balances-label">Balance pendiente por persona</p>
                   <div className="debt-summary__balances-row">
                     {memberBalances.map(({ uid, net }) => {
-                      // Buscar el usuario para renderizar su avatar
                       const userDebt = debts.find(d => d.fromUserId === uid || d.toUserId === uid);
                       const userObj = userDebt ? (userDebt.fromUserId === uid ? userDebt.fromUser : userDebt.toUser) : null;
                       
@@ -248,7 +285,6 @@ function DebtSummary() {
             </>
           )}
 
-          {/* TAB: PAGADAS */}
           {statusTab === 'PAID' && (
             <section className="debt-summary__section debt-summary__section--paid">
               {debts.length === 0 ? (
@@ -265,6 +301,14 @@ function DebtSummary() {
           )}
         </div>
       )}
+
+      {/* Renderizamos el modal aquí abajo */}
+      <MarkAsPaidModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmMarkPaid}
+        isSubmitting={isSubmitting}
+      />
     </div>
   )
 }
