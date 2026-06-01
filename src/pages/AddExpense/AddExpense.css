@@ -59,6 +59,49 @@
   pointer-events: none;
 }
 
+/* Nuevos estilos para el Monto Editable */
+.add-expense__amount-box-editable {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-bottom: 2px dashed var(--color-border); /* Una sutil línea guía para saber que es editable */
+  padding: 4px 12px;
+  transition: border-color 0.2s;
+}
+
+.add-expense__amount-box-editable:focus-within {
+  border-color: var(--color-primary); /* Se ilumina al hacer clic */
+}
+
+.add-expense__currency-symbol {
+  font-size: 46px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.add-expense__amount-input-visible {
+  font-size: 52px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 160px; /* Tamaño ideal para montos estándar */
+  text-align: left;
+  font-family: inherit;
+}
+
+/* Remueve las flechas por defecto del input number en Chrome/Safari/Firefox */
+.add-expense__amount-input-visible::-webkit-outer-spin-button,
+.add-expense__amount-input-visible::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.add-expense__amount-input-visible[type=number] {
+  -moz-appearance: textfield;
+}
+
 .add-expense__amount-input {
   position: absolute;
   inset: 0;

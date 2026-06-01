@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useApp, genId, buildDebts } from '../../context/AppContext'
+import { useApp } from '../../context/AppContext'
+import { createExpense } from '../../services/expenses.service' 
 import './AddExpense.css'
 
 function AddExpense() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const { groups, allUsers, currentUser, dispatch } = useApp()
+  const { groups, allUsers, currentUser } = useApp()
   const users = allUsers
 
   const group = groups.find(g => g.id === id)
@@ -14,6 +15,7 @@ function AddExpense() {
     ? group.memberIds.map(uid => users.find(u => u.id === uid)).filter(Boolean)
     : []
 
+  // Estados del formulario
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -22,6 +24,10 @@ function AddExpense() {
   const [customAmounts, setCustomAmounts] = useState(
     () => Object.fromEntries(members.map(m => [m.id, '']))
   )
+
+  // Estados de control para la API de Spring Boot
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState(null)
 
   const totalAmount = parseFloat(amount) || 0
   const displayAmount = totalAmount > 0 ? totalAmount.toFixed(2) : '0.00'
@@ -42,8 +48,9 @@ function AddExpense() {
     })
   }
 
-  const handleSave = () => {
-    if (!amount || !description || totalAmount <= 0) return
+  // CABLEADO CON EL BACKEND DE SPRING BOOT
+  const handleSave = async () => {
+    if (!amount || !description || totalAmount <= 0 || isSubmitting) return
 
     let splitBetween
     if (splitMode === 'equal') {
@@ -58,49 +65,69 @@ function AddExpense() {
       }))
     }
 
-    const expense = {
-      id: genId('e'),
-      groupId: id,
+    // Armamos el payload EXACTO según el Swagger del Backend
+    const payload = {
       description: description.trim(),
       amount: totalAmount,
       paidBy,
+      date, // Formato "YYYY-MM-DD" que requiere el controlador
       splitBetween,
-      date,
-      items: [],
     }
 
-    const debts = buildDebts(expense)
-    dispatch({ type: 'ADD_EXPENSE', expense, debts })
-    navigate(`/groups/${id}`)
+    try {
+      setIsSubmitting(true)
+      setErrorMessage(null)
+      
+      // Enviamos el gasto por HTTP POST a Railway
+      await createExpense(id, payload)
+      
+      // Si el backend responde con éxito (201), regresamos al detalle del grupo
+      navigate(`/groups/${id}`)
+    } catch (err) {
+      console.error("Error al registrar gasto:", err)
+      setErrorMessage(err.response?.data?.message || "Ocurrió un error al guardar el gasto en el servidor.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const isValid = totalAmount > 0 && description.trim().length > 0 &&
-    (splitMode === 'equal' || Math.abs(customRemaining) < 0.01)
+    (splitMode === 'equal' || Math.abs(customRemaining) < 0.01) && !isSubmitting
 
   return (
     <div className="add-expense">
       <div className="add-expense__header">
-        <button className="add-expense__back" onClick={() => navigate(-1)}>←</button>
+        <button className="add-expense__back" onClick={() => navigate(-1)} disabled={isSubmitting}>←</button>
         <h1 className="add-expense__title">Nuevo gasto</h1>
       </div>
 
       <div className="add-expense__card">
+        {/* Banner de error por si falla Railway */}
+        {errorMessage && (
+          <div className="add-expense__error-banner">
+            ⚠️ {errorMessage}
+          </div>
+        )}
+
+
         {/* Monto */}
         <div className="add-expense__amount-section">
           <p className="add-expense__amount-label">Monto</p>
-          <div className="add-expense__amount-box">
-            <p className="add-expense__amount-value">S/ {displayAmount}</p>
+          <div className="add-expense__amount-box-editable">
+            <span className="add-expense__currency-symbol">S/</span>
             <input
-              className="add-expense__amount-input"
+              className="add-expense__amount-input-visible"
               type="number"
               placeholder="0.00"
               value={amount}
               onChange={e => setAmount(e.target.value)}
               min="0"
               step="0.01"
+              disabled={isSubmitting}
             />
           </div>
         </div>
+
 
         {/* Descripción */}
         <div className="add-expense__field">
@@ -110,8 +137,10 @@ function AddExpense() {
             placeholder="Descripción del gasto"
             value={description}
             onChange={e => setDescription(e.target.value)}
+            disabled={isSubmitting}
           />
         </div>
+
 
         {/* Fecha */}
         <div className="add-expense__field add-expense__field--date">
@@ -123,6 +152,7 @@ function AddExpense() {
               value={date}
               onChange={e => setDate(e.target.value)}
               className="add-expense__date-hidden"
+              disabled={isSubmitting}
             />
           </label>
         </div>
@@ -138,6 +168,7 @@ function AddExpense() {
                   key={member.id}
                   className={`add-expense__member-btn ${active ? 'active' : ''}`}
                   onClick={() => setPaidBy(member.id)}
+                  disabled={isSubmitting}
                   style={active
                     ? { background: avatarColors[idx % avatarColors.length], borderColor: avatarColors[idx % avatarColors.length] }
                     : {}}
@@ -157,17 +188,19 @@ function AddExpense() {
 
         {/* Dividir gasto */}
         <div className="add-expense__field">
-          <label className="add-expense__label">Dividir gasto</label>
+          <label className="add-expense__label">Dividir gastos</label>
           <div className="add-expense__split-toggle">
             <button
               className={`add-expense__split-btn ${splitMode === 'equal' ? 'active' : ''}`}
               onClick={() => setSplitMode('equal')}
+              disabled={isSubmitting}
             >
               Partes iguales
             </button>
             <button
               className={`add-expense__split-btn ${splitMode === 'custom' ? 'active' : ''}`}
               onClick={() => setSplitMode('custom')}
+              disabled={isSubmitting}
             >
               Personalizado
             </button>
@@ -206,7 +239,7 @@ function AddExpense() {
                     <span>{m.id === currentUser.id ? 'Tú' : m.name.split(' ')[0]}</span>
                   </div>
                   <div className="add-expense__custom-input-wrap">
-                    <span className="add-expense__custom-prefix">$</span>
+                    <span className="add-expense__custom-prefix">S/</span>
                     <input
                       className="add-expense__custom-input"
                       type="number"
@@ -215,6 +248,7 @@ function AddExpense() {
                       placeholder="0.00"
                       value={customAmounts[m.id]}
                       onChange={e => setCustomAmounts(prev => ({ ...prev, [m.id]: e.target.value }))}
+                      disabled={isSubmitting}
                     />
                   </div>
                 </div>
@@ -235,7 +269,7 @@ function AddExpense() {
           onClick={handleSave}
           disabled={!isValid}
         >
-          Guardar gasto
+          {isSubmitting ? 'Guardando...' : 'Guardar gasto'}
         </button>
       </div>
     </div>
