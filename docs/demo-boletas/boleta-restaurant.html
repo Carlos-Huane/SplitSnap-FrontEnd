@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Boleta Demo — Restaurant</title>
+<style>
+  body {
+    margin: 0;
+    padding: 40px;
+    background: #e5e5e5;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    justify-content: center;
+  }
+  .receipt {
+    background: #ffffff;
+    width: 360px;
+    padding: 28px 24px;
+    color: #000;
+    font-size: 15px;
+    line-height: 1.55;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .receipt h1 {
+    text-align: center;
+    font-size: 22px;
+    margin: 0 0 4px 0;
+    letter-spacing: 1px;
+  }
+  .meta { text-align: center; font-size: 13px; margin-bottom: 12px; }
+  hr { border: 0; border-top: 1px dashed #000; margin: 10px 0; }
+  .row { display: flex; justify-content: space-between; }
+  .total { font-size: 18px; font-weight: bold; margin-top: 6px; }
+  .small { font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="receipt">
+  <h1>EL HORNO PERUANO</h1>
+  <div class="meta">
+    Restaurant Criollo<br>
+    Av. Larco 123, Miraflores<br>
+    RUC: 20512345678<br>
+    Telf: 01-555-1234
+  </div>
+  <hr>
+  <div>BOLETA DE VENTA ELECTRONICA</div>
+  <div>B001-001234</div>
+  <div>FECHA: 01/06/2026  HORA: 13:45</div>
+  <div>CAJERO: MARIA L.</div>
+  <hr>
+  <div class="row"><span>1 LOMO SALTADO</span><span>38.00</span></div>
+  <div class="row"><span>1 AJI DE GALLINA</span><span>32.00</span></div>
+  <div class="row"><span>1 CAUSA LIMENA</span><span>28.00</span></div>
+  <div class="row"><span>1 CHICHA MORADA JARRA</span><span>18.00</span></div>
+  <div class="row"><span>2 INCA KOLA 500ML</span><span>16.00</span></div>
+  <div class="row"><span>2 POSTRE SUSPIRO</span><span>30.00</span></div>
+  <hr>
+  <div class="row"><span>VALOR VENTA</span><span>S/ 137.29</span></div>
+  <div class="row"><span>I.G.V. 18%</span><span>S/ 24.71</span></div>
+  <hr>
+  <div class="row total"><span>TOTAL A PAGAR</span><span>S/ 162.00</span></div>
+  <hr>
+  <div class="small">SON: CIENTO SESENTA Y DOS CON 00/100 SOLES</div>
+  <div class="small">PAGO: EFECTIVO</div>
+  <br>
+  <div class="small" style="text-align:center;">¡GRACIAS POR SU VISITA!</div>
+</div>
+</body>
+</html>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
-import { register as registerAPI, saveToken, getToken } from '../../api/authService'
+import { register as registerAPI, isAuthenticated } from '../../services/auth.service'
+import { extractErrorMessage } from '../../services/api'
 import '../Login/Login.css'
 import './Register.css'
 
@@ -9,9 +10,8 @@ function Register() {
   const navigate = useNavigate()
   const { dispatch } = useApp()
 
-  // Si hay token válido, redirigir a dashboard
   useEffect(() => {
-    if (getToken()) {
+    if (isAuthenticated()) {
       navigate('/dashboard', { replace: true })
     }
   }, [navigate])
@@ -39,7 +39,6 @@ function Register() {
     const email = formData.email.trim().toLowerCase()
     const phone = formData.phone.trim().replace(/\s+/g, '')
 
-    // Validación cliente
     if (name.length < 3) {
       setError('Ingresa tu nombre completo (mínimo 3 caracteres).')
       setLoading(false)
@@ -72,28 +71,22 @@ function Register() {
     }
 
     try {
-      // Llamar al backend
-      const response = await registerAPI({
+      const { token, user } = await registerAPI({
         name,
         email,
         phone,
         password: formData.password,
       })
 
-      // Guardar token y actualizar contexto
-      saveToken(response.token)
-      dispatch({ type: 'LOGIN', userId: response.user.id })
-
-      // Navegar al dashboard
+      dispatch({ type: 'REGISTER_USER', user, token })
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      // Manejar errores del backend
-      if (err.message.includes('409')) {
+      if (err.response?.status === 409) {
         setError('Este correo ya está registrado.')
-      } else if (err.message.includes('400')) {
-        setError(err.message || 'Datos inválidos. Revisa el formulario.')
+      } else if (err.response?.status === 400) {
+        setError(extractErrorMessage(err, 'Datos inválidos. Revisa el formulario.'))
       } else {
-        setError(err.message || 'Error en el registro. Intenta de nuevo.')
+        setError(extractErrorMessage(err, 'Error en el registro. Intenta de nuevo.'))
       }
     } finally {
       setLoading(false)

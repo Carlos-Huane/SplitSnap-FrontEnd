@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
-import { login as loginAPI, saveToken, getToken } from '../../api/authService'
+import { login as loginAPI, isAuthenticated } from '../../services/auth.service'
+import { extractErrorMessage } from '../../services/api'
 import './Login.css'
 
 function Login() {
@@ -9,12 +10,13 @@ function Login() {
   const location = useLocation()
   const { dispatch } = useApp()
 
-  // Si hay token válido, redirigir a dashboard (persistencia de sesión)
+  // Si hay sesión válida, redirigir a dashboard (persistencia de sesión)
   useEffect(() => {
-    if (getToken()) {
+    if (isAuthenticated()) {
       navigate('/dashboard', { replace: true })
     }
   }, [navigate])
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -26,27 +28,23 @@ function Login() {
     setLoading(true)
 
     try {
-      // Llamar al backend
-      const response = await loginAPI({
+      const { token, user } = await loginAPI({
         email: email.trim().toLowerCase(),
         password,
       })
 
-      // Guardar token y actualizar contexto
-      saveToken(response.token)
-      dispatch({ type: 'LOGIN', userId: response.user.id })
+      // El servicio ya guardó el token; el reducer registra al user
+      dispatch({ type: 'LOGIN', userId: user.id, user, token })
 
-      // Navegar al dashboard
       const redirect = location.state?.from || '/dashboard'
       navigate(redirect, { replace: true })
     } catch (err) {
-      // Manejar errores del backend
-      if (err.message.includes('401')) {
+      if (err.response?.status === 401) {
         setError('Credenciales incorrectas.')
-      } else if (err.message.includes('400')) {
+      } else if (err.response?.status === 400) {
         setError('Datos inválidos.')
       } else {
-        setError(err.message || 'Error en login. Intenta de nuevo.')
+        setError(extractErrorMessage(err, 'Error en login. Intenta de nuevo.'))
       }
     } finally {
       setLoading(false)

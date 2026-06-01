@@ -21,11 +21,14 @@ function ReviewItems() {
   const [members, setMembers] = useState([])
   const [groupError, setGroupError] = useState(null)
 
+  const detectedAmountNumber = typeof ocr.detectedAmount === 'number' ? ocr.detectedAmount : 0
+  const ocrFailed = !detectedAmountNumber || detectedAmountNumber <= 0
+
   const [description, setDescription] = useState(
     ocr.description ? String(ocr.description).replace(/^Escaneo:\s*/, '') : ''
   )
   const [amount, setAmount] = useState(
-    typeof ocr.detectedAmount === 'number' ? ocr.detectedAmount.toFixed(2) : ''
+    detectedAmountNumber > 0 ? detectedAmountNumber.toFixed(2) : ''
   )
   const [paidBy, setPaidBy] = useState(tokenUser?.id || '')
   const [selectedMembers, setSelectedMembers] = useState([])
@@ -177,6 +180,18 @@ function ReviewItems() {
           <p className="review-items__subtitle">Verifica los datos detectados antes de confirmar</p>
         </div>
       </div>
+
+      {ocrFailed && (
+        <div className="review-items__ocr-warning">
+          <span className="review-items__ocr-warning-icon">⚠️</span>
+          <div>
+            <p className="review-items__ocr-warning-title">No detectamos el monto automáticamente</p>
+            <p className="review-items__ocr-warning-desc">
+              La boleta no tenía un total claro (ej. "TOTAL", "PRECIO VENTA", "IMPORTE TOTAL"). Revisa el texto detectado e ingresa el monto manualmente.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="review-items__paid-by">
         <p className="review-items__paid-label">¿Quién pagó el recibo?</p>

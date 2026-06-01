@@ -2,9 +2,9 @@ import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Profile.css";
 import { useApp } from "../../context/AppContext";
-import { getProfile, updateProfile, uploadAvatar } from "../../api/userService";
-import { buyCredits as buyCreditAPI, getCredits as getCreditsAPI } from "../../api/creditsService";
-import { clearToken } from "../../api/authService";
+import { getMe, updateMe, uploadAvatar } from "../../services/users.service";
+import { buyCredits as buyCreditAPI, getCredits as getCreditsAPI } from "../../services/credits.service";
+import { extractErrorMessage, resolveAssetUrl } from "../../services/api";
 import {
   settingsMenu,
   privacyOptions,
@@ -72,19 +72,19 @@ function Profile() {
     const loadProfileAndCredits = async () => {
       try {
         setLoading(true);
-        const profile = await getProfile();
+        const profile = await getMe();
         setProfileData(profile);
         setEditForm(prev => ({
           ...prev,
           name: profile.name,
           email: profile.email,
-          phone: profile.phone,
+          phone: profile.phone || '',
         }));
 
-        const credits = await getCreditsAPI();
-        setCreditsData(credits);
+        const creditsResp = await getCreditsAPI();
+        setCreditsData(creditsResp);
       } catch (err) {
-        showToast(err.message || 'Error cargando datos del perfil');
+        showToast(extractErrorMessage(err, 'Error cargando datos del perfil'));
       } finally {
         setLoading(false);
       }
@@ -97,13 +97,14 @@ function Profile() {
       .filter(d => d.status !== 'paid')
       .reduce((s, d) => s + d.amount, 0);
     const fmtMoney = (n) => Number.isInteger(n) ? n.toString() : n.toFixed(2);
+    const creditBalance = creditsData?.balance ?? credits ?? 0;
 
     return [
       { id: 'ps1', label: 'Grupos activos', value: groups.length },
       { id: 'ps2', label: 'Por saldar', value: fmtMoney(pendingTotal), isCurrency: true },
-      { id: 'ps3', label: 'Créditos', value: fmtMoney(credits), isCurrency: true },
+      { id: 'ps3', label: 'Créditos', value: fmtMoney(creditBalance), isCurrency: true },
     ];
-  }, [groups, debts, credits]);
+  }, [groups, debts, credits, creditsData]);
 
   if (!currentUser) return null;
   const user = profileData || currentUser;
@@ -133,7 +134,7 @@ function Profile() {
       dispatch({ type: 'SET_AVATAR', avatar: result.avatarUrl });
       showToast('Foto actualizada ✓');
     } catch (err) {
-      showToast(err.message || 'Error subiendo foto');
+      showToast(extractErrorMessage(err, 'Error subiendo foto'));
     } finally {
       setLoading(false);
     }
@@ -186,16 +187,23 @@ function Profile() {
         currentPassword: editForm.currentPassword || undefined,
         newPassword: editForm.newPassword || undefined,
       };
-      const updated = await updateProfile(payload);
+      const updated = await updateMe(payload);
       setProfileData(updated);
       dispatch({ type: 'UPDATE_PROFILE', userId: updated.id, changes: { name: updated.name, email: updated.email } });
       setEditForm(prev => ({ ...prev, currentPassword: '', newPassword: '' }));
       showToast('Cambios guardados con éxito ✓');
     } catch (err) {
-      if (err.message.includes('409')) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.message || '';
+      // El backend devuelve 400 para "email ya en uso" (no 409 como dice la guia)
+      if (status === 409 || /email.*(uso|registrad)/i.test(msg)) {
         showToast('El email ya está en uso.');
+      } else if (/contrase.+actual.+incorrecta/i.test(msg)) {
+        showToast('La contraseña actual es incorrecta.');
+      } else if (status === 400) {
+        showToast(extractErrorMessage(err, 'Datos inválidos.'));
       } else {
-        showToast(err.message || 'Error guardando cambios');
+        showToast(extractErrorMessage(err, 'Error guardando cambios'));
       }
     } finally {
       setLoading(false);
@@ -210,14 +218,13 @@ function Profile() {
 
     try {
       setLoading(true);
-      const result = await buyCreditAPI(amount);
-      // Actualizar créditos locales desde la API
+      await buyCreditAPI(amount);
+      // Releer estado real desde el backend
       const updated = await getCreditsAPI();
       setCreditsData(updated);
-      dispatch({ type: 'BUY_CREDITS', amount });
       showToast(`+${amount} créditos comprados ✓`);
     } catch (err) {
-      showToast(err.message || 'Error comprando créditos');
+      showToast(extractErrorMessage(err, 'Error comprando créditos'));
     } finally {
       setLoading(false);
     }
@@ -250,7 +257,7 @@ function Profile() {
     setActiveAccordion(activeAccordion === id ? null : id);
 
   const handleLogout = () => {
-    clearToken();
+    // El reducer LOGOUT ya limpia el token desde services/auth.service
     dispatch({ type: 'LOGOUT' });
     navigate('/login', { replace: true });
   };
@@ -258,10 +265,11 @@ function Profile() {
   const getInitials = () =>
     user.name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('');
 
+  const avatarSrc = resolveAssetUrl(profileData?.avatarUrl || profileAvatar);
   const renderAvatarVisual = (size = 'large') => (
     <div className={`avatar-circle${size === 'small' ? ' small' : ''}`}>
-      {profileData?.avatarUrl || profileAvatar
-        ? <img src={profileData?.avatarUrl || profileAvatar} alt={user.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+      {avatarSrc
+        ? <img src={avatarSrc} alt={user.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
         : getInitials()}
     </div>
   );
@@ -341,8 +349,9 @@ function Profile() {
         );
 
       case "sm2": {
-        const recentTx = creditsData?.transactions || [];
-        const creditBalance = creditsData?.balance || credits;
+        // El backend documenta el array como "history"; mantenemos compat con "transactions"
+        const recentTx = creditsData?.history || creditsData?.transactions || [];
+        const creditBalance = creditsData?.balance ?? credits ?? 0;
         return (
           <div className="payment-methods-container">
             <div className="credits-balance-card">
@@ -391,16 +400,19 @@ function Profile() {
               <p className="credits-empty">Aún no has comprado créditos.</p>
             ) : (
               <div className="credits-history">
-                {recentTx.map(tx => (
-                  <div key={tx.id} className="credits-history-row">
-                    <span>
-                      {tx.type === 'purchase' ? '🛒 Compra' : '💸 Pago de deuda'}
-                    </span>
-                    <span style={{ color: tx.type === 'purchase' ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                      {tx.type === 'purchase' ? '+' : '-'}{tx.amount.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
+                {recentTx.map((tx, idx) => {
+                  // El backend usa "PURCHASE" / "SPEND" (uppercase)
+                  const isPurchase = String(tx.type || '').toUpperCase() === 'PURCHASE';
+                  const amount = Number(tx.amount) || 0;
+                  return (
+                    <div key={tx.id || `tx-${idx}`} className="credits-history-row">
+                      <span>{isPurchase ? '🛒 Compra' : '💸 Pago de deuda'}</span>
+                      <span style={{ color: isPurchase ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                        {isPurchase ? '+' : '-'}{amount.toFixed(2)}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -539,7 +551,7 @@ function Profile() {
                     <span>{item.label}</span>
                     {item.id === 'sm2' && (
                       <span className="credits-badge">
-                        {credits.toFixed(0)}
+                        {(creditsData?.balance ?? credits ?? 0).toFixed(0)}
                       </span>
                     )}
                   </div>

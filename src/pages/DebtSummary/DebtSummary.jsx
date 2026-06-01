@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
-import { getDebts, markDebtAsPaid, payDebtWithCredits } from '../../api/debtsService'
+import { getDebts, markAsPaid, payWithCredits } from '../../services/debts.service'
+import { getGroup } from '../../services/groups.service'
+import { getExpensesByGroup } from '../../services/expenses.service'
+import { getCredits } from '../../services/credits.service'
+import { extractErrorMessage } from '../../services/api'
 import MarkAsPaidModal from './MarkAsPaidModal'
 import PayWithCreditsModal from './PayWithCreditsModal'
 import './DebtSummary.css'
@@ -9,20 +13,22 @@ import './DebtSummary.css'
 function DebtSummary() {
   const navigate = useNavigate()
   const { id: groupId } = useParams()
-  
-  const { groups, expenses, credits, currentUser, dispatch } = useApp()
 
-  const group = groups.find(g => g.id === groupId)
-  const groupExpenses = expenses.filter(e => e.groupId === groupId)
-  const groupTotal = groupExpenses.reduce((sum, e) => sum + e.amount, 0)
-  const memberCount = group?.memberIds.length || 0
+  const { credits, currentUser } = useApp()
+
+  // Grupo + gastos del backend (no del contexto mock)
+  const [group, setGroup] = useState(null)
+  const [groupExpenses, setGroupExpenses] = useState([])
+  const groupTotalLocal = groupExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
+  const memberCount = group?.memberCount ?? group?.members?.length ?? 0
 
   // --- ESTADOS LOCALES GENERALES ---
   const [debts, setDebts] = useState([])
-  const [statusTab, setStatusTab] = useState('PENDING') 
+  const [statusTab, setStatusTab] = useState('PENDING')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [toast, setToast] = useState('')
+  const [creditBalance, setCreditBalance] = useState(credits ?? 0)
 
   // --- ESTADOS PARA EL MODAL DE PAGO MANUAL (HU-F5.2) ---
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -40,21 +46,21 @@ function DebtSummary() {
     setError(null)
     try {
       const data = await getDebts(groupId, statusTab)
-      
+
       const adaptedDebts = data.map(debt => ({
         ...debt,
-        fromUserId: debt.fromUser.id,
-        toUserId: debt.toUser.id,
+        fromUserId: debt.fromUser?.id ?? debt.fromUserId,
+        toUserId: debt.toUser?.id ?? debt.toUserId,
         fromUser: debt.fromUser,
-        toUser: debt.toUser
+        toUser: debt.toUser,
       }))
-      
+
       setDebts(adaptedDebts)
     } catch (err) {
-      if (err.message === '403') {
+      if (err.response?.status === 403) {
         setError('No tienes acceso a este grupo.')
       } else {
-        setError(err.message || 'Ocurrió un error al cargar las deudas.')
+        setError(extractErrorMessage(err, 'Ocurrió un error al cargar las deudas.'))
       }
     } finally {
       setLoading(false)
@@ -64,6 +70,30 @@ function DebtSummary() {
   useEffect(() => {
     if (groupId) fetchDebts()
   }, [fetchDebts])
+
+  // Cargar el saldo real de créditos del backend (no del estado local mock)
+  useEffect(() => {
+    let cancelled = false
+    getCredits()
+      .then((data) => { if (!cancelled) setCreditBalance(data?.balance ?? 0) })
+      .catch(() => { /* dejamos el fallback del context */ })
+    return () => { cancelled = true }
+  }, [])
+
+  // Cargar grupo (header) y gastos (total) desde el backend
+  useEffect(() => {
+    if (!groupId) return
+    let cancelled = false
+    Promise.all([
+      getGroup(groupId).catch(() => null),
+      getExpensesByGroup(groupId).catch(() => []),
+    ]).then(([g, exps]) => {
+      if (cancelled) return
+      setGroup(g)
+      setGroupExpenses(exps || [])
+    })
+    return () => { cancelled = true }
+  }, [groupId])
 
   // --- FUNCIONES AUXILIARES ---
   const showToast = (msg) => {
@@ -80,19 +110,20 @@ function DebtSummary() {
   const handleConfirmMarkPaid = async (paidWith) => {
     setIsSubmitting(true)
     try {
-      await markDebtAsPaid(groupId, selectedDebtId, paidWith)
+      await markAsPaid(groupId, selectedDebtId, paidWith)
       showToast('✓ Deuda marcada como pagada')
       setIsModalOpen(false)
-      fetchDebts() 
+      fetchDebts()
     } catch (err) {
-      if (err.message === '403') {
+      const status = err.response?.status
+      if (status === 403) {
         alert('Solo el deudor puede marcar esta deuda como pagada.')
-      } else if (err.message === '409') {
+      } else if (status === 409) {
         alert('Esta deuda ya estaba pagada.')
         setIsModalOpen(false)
-        fetchDebts() 
+        fetchDebts()
       } else {
-        alert(err.message)
+        alert(extractErrorMessage(err, 'No pudimos marcar la deuda como pagada.'))
       }
     } finally {
       setIsSubmitting(false)
@@ -108,26 +139,31 @@ function DebtSummary() {
   const handleConfirmPayCredits = async (debtId) => {
     setIsSubmittingCredit(true)
     try {
-      await payDebtWithCredits(groupId, debtId)
+      await payWithCredits(groupId, debtId)
       showToast('✓ Pago de deuda exitoso usando créditos')
-      
-      // Sincroniza el estado global de la app para descontar los créditos localmente
-      dispatch({ type: 'SPEND_CREDITS', amount: debtToPay.amount })
-      
+
+      // Releer balance real desde el backend
+      try {
+        const refreshed = await getCredits()
+        setCreditBalance(refreshed?.balance ?? 0)
+      } catch { /* no-op */ }
+
       setIsCreditModalOpen(false)
-      fetchDebts() 
+      fetchDebts()
     } catch (err) {
-      if (err.message === '400_INSUFFICIENT_CREDITS') {
+      const status = err.response?.status
+      const msg = err.response?.data?.message || ''
+      if (status === 400 && /insuficient/i.test(msg)) {
         alert('No tienes suficientes créditos. Serás redirigido a tu perfil para comprar.')
         navigate('/profile')
-      } else if (err.message === '403') {
+      } else if (status === 403) {
         alert('Solo el deudor puede pagar esta deuda.')
-      } else if (err.message === '409') {
+      } else if (status === 409) {
         alert('Esta deuda ya estaba pagada.')
         setIsCreditModalOpen(false)
-        fetchDebts() 
+        fetchDebts()
       } else {
-        alert(err.message)
+        alert(extractErrorMessage(err, 'No pudimos procesar el pago.'))
       }
     } finally {
       setIsSubmittingCredit(false)
@@ -137,7 +173,7 @@ function DebtSummary() {
   // Visuales
   const getName = (userObj) => {
     if (!userObj) return 'Desconocido'
-    return userObj.id === currentUser.id ? 'Tú' : userObj.name.split(' ')[0]
+    return userObj.id === currentUser?.id ? 'Tú' : (userObj.name?.split(' ')[0] || 'Usuario')
   }
   const getInitial = (name) => name?.charAt(0).toUpperCase() || '?'
   
@@ -148,10 +184,13 @@ function DebtSummary() {
     return palette[Math.abs(hash) % palette.length]
   }
 
-  const memberBalances = statusTab === 'PENDING' 
-    ? (group?.memberIds || []).map(uid => {
-        const owed = debts.filter(d => d.toUserId === uid).reduce((s, d) => s + d.amount, 0)
-        const owes = debts.filter(d => d.fromUserId === uid).reduce((s, d) => s + d.amount, 0)
+  // Soporta ambos shapes: memberIds (mock) y members[] (backend)
+  const memberIdsForBalances =
+    group?.memberIds ?? (group?.members || []).map(m => m.id ?? m.userId)
+  const memberBalances = statusTab === 'PENDING'
+    ? memberIdsForBalances.map(uid => {
+        const owed = debts.filter(d => d.toUserId === uid).reduce((s, d) => s + (Number(d.amount) || 0), 0)
+        const owes = debts.filter(d => d.fromUserId === uid).reduce((s, d) => s + (Number(d.amount) || 0), 0)
         return { uid, net: owed - owes }
       })
     : []
@@ -159,7 +198,8 @@ function DebtSummary() {
   // --- COMPONENTE DE TARJETA ---
   const DebtCard = ({ debt }) => {
     const isPaid = statusTab === 'PAID'
-    const isDebtor = debt.fromUserId === currentUser.id
+    const isDebtor = debt.fromUserId === currentUser?.id
+    const debtAmount = Number(debt.amount) || 0
 
     return (
       <div className={`debt-card ${isPaid ? 'debt-card--paid' : ''}`}>
@@ -181,11 +221,11 @@ function DebtSummary() {
           
           {isPaid ? (
              <div className="debt-card__paid-badge">
-               <span className="debt-card__amount debt-card__amount--paid">S/{debt.amount.toFixed(2)}</span>
+               <span className="debt-card__amount debt-card__amount--paid">S/{debtAmount.toFixed(2)}</span>
                <span className="debt-card__paid-label">✓ Pagado</span>
              </div>
           ) : (
-            <span className="debt-card__amount">S/{debt.amount.toFixed(2)}</span>
+            <span className="debt-card__amount">S/{debtAmount.toFixed(2)}</span>
           )}
         </div>
 
@@ -197,7 +237,7 @@ function DebtSummary() {
                   className="debt-card__pay-btn debt-card__pay-btn--credits"
                   onClick={() => handleOpenCreditModal(debt)}
                 >
-                  💰 Pagar con créditos · S/{debt.amount.toFixed(2)}
+                  💰 Pagar con créditos · S/{debtAmount.toFixed(2)}
                 </button>
               )}
             </div>
@@ -205,7 +245,7 @@ function DebtSummary() {
             {isDebtor ? (
               <>
                 <p className="debt-card__credits-hint">
-                  Saldo: {credits.toFixed(2)} créditos
+                  Saldo: {creditBalance.toFixed(2)} créditos
                 </p>
                 <button className="debt-card__mark-paid" onClick={() => handleOpenModal(debt.id)}>
                   ☑ Marcar como pagado (manual)
@@ -244,7 +284,7 @@ function DebtSummary() {
       <div className="debt-summary__balance-card">
         <p className="debt-summary__balance-label">Gasto total del grupo</p>
         <p className="debt-summary__balance-amount">
-          S/{groupTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          S/{groupTotalLocal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </p>
         <p className="debt-summary__group-name">{group?.emoji} {group?.name || 'Grupo'}</p>
         <span className="debt-summary__member-badge">
@@ -340,13 +380,13 @@ function DebtSummary() {
       />
 
       {/* Modal para pagar con créditos del sistema (HU-F5.3) */}
-      <PayWithCreditsModal 
+      <PayWithCreditsModal
         isOpen={isCreditModalOpen}
         onClose={() => setIsCreditModalOpen(false)}
         onConfirm={handleConfirmPayCredits}
         isSubmitting={isSubmittingCredit}
         debt={debtToPay}
-        currentCredits={credits}
+        currentCredits={creditBalance}
       />
     </div>
   )
