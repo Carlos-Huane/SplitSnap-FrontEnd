@@ -1,0 +1,72 @@
+import axios from 'axios'
+
+const TOKEN_KEY = 'splitsnap_token'
+
+export const getToken = () => localStorage.getItem(TOKEN_KEY)
+export const setToken = (token) => localStorage.setItem(TOKEN_KEY, token)
+export const clearToken = () => localStorage.removeItem(TOKEN_KEY)
+
+// Backend desplegado en Railway. Es el fallback por default para que
+// cualquier integrante pueda clonar el repo y arrancar sin crear .env.
+// Para apuntar a un backend local, crea un .env con VITE_API_URL=http://localhost:8080
+const DEFAULT_API_URL = 'https://splitsnap-backend-production-7213.up.railway.app'
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || DEFAULT_API_URL,
+  timeout: 30000,
+  headers: { 'Content-Type': 'application/json' },
+})
+
+api.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (!error.response) {
+      window.dispatchEvent(
+        new CustomEvent('app:network-error', {
+          detail: { message: 'No se pudo conectar con el servidor. Verifica que el backend este corriendo.' },
+        })
+      )
+      return Promise.reject(error)
+    }
+
+    const status = error.response.status
+
+    if (status === 401) {
+      clearToken()
+      window.dispatchEvent(new CustomEvent('auth:expired'))
+    }
+
+    return Promise.reject(error)
+  }
+)
+
+export const extractErrorMessage = (error, fallback = 'Ocurrio un error inesperado') => {
+  if (error?.response?.data?.message) return error.response.data.message
+  if (error?.message) return error.message
+  return fallback
+}
+
+/**
+ * El backend devuelve avatares como ruta relativa (/uploads/avatars/xxx.jpg).
+ * En produccion el frontend vive en Vercel y el backend en Railway, asi que
+ * hay que anteponer la base del API si la URL no es absoluta.
+ *
+ * Si el path ya es null/dataURL/absoluta, lo devuelve tal cual.
+ */
+export const resolveAssetUrl = (path) => {
+  if (!path) return path
+  if (typeof path !== 'string') return path
+  if (path.startsWith('data:') || /^https?:\/\//i.test(path)) return path
+  const base = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(/\/$/, '')
+  return path.startsWith('/') ? `${base}${path}` : `${base}/${path}`
+}
+
+export default api

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { groupEmojis } from '../../data/groups'
-import { genId } from '../../context/AppContext'
 import './CreateGroup.css'
 
 const groupTypes = [
@@ -16,12 +15,15 @@ function CreateGroup() {
   const [name, setName] = useState('')
   const [selectedType, setSelectedType] = useState(null)
   const [selectedEmoji, setSelectedEmoji] = useState(null)
+  const maxNameLength = 50
 
   const handleContinue = () => {
     if (!name.trim()) return
     const emoji = selectedEmoji || (selectedType ? groupTypes.find(t => t.label === selectedType)?.emoji : '📦')
-    const newId = genId('g')
-    navigate(`/groups/${newId}/invite`, { state: { groupName: name, emoji, isNew: true, newId } })
+    // El grupo real se crea en InviteMembers (POST /api/groups con memberIds[])
+    navigate('/groups/new/invite', {
+      state: { groupName: name.trim(), emoji, isNew: true },
+    })
   }
 
   return (
@@ -47,8 +49,12 @@ function CreateGroup() {
             type="text"
             placeholder="Ej. Viaje a Barcelona"
             value={name}
+            maxLength={maxNameLength}
             onChange={(e) => setName(e.target.value)}
           />
+          <p className="create-group__counter">
+            {name.length}/{maxNameLength}
+          </p>
         </div>
 
         <div className="create-group__field">

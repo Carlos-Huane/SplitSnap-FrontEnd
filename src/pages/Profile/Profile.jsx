@@ -2,6 +2,9 @@ import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Profile.css";
 import { useApp } from "../../context/AppContext";
+import { getMe, updateMe, uploadAvatar } from "../../services/users.service";
+import { buyCredits as buyCreditAPI, getCredits as getCreditsAPI } from "../../services/credits.service";
+import { extractErrorMessage, resolveAssetUrl } from "../../services/api";
 import {
   settingsMenu,
   privacyOptions,
@@ -54,40 +57,64 @@ function Profile() {
   const [editForm, setEditForm] = useState({
     name: currentUser?.name || '',
     email: currentUser?.email || '',
+    phone: currentUser?.phone || '',
     currentPassword: "",
     newPassword: "",
   });
+  const [profileData, setProfileData] = useState(null);
+  const [creditsData, setCreditsData] = useState(null);
   const [customAmount, setCustomAmount] = useState('');
   const [toast, setToast] = useState('');
+  const [loading, setLoading] = useState(false);
 
+  // Cargar perfil desde API al montar
   useEffect(() => {
-    if (currentUser) {
-      setEditForm(prev => ({ ...prev, name: currentUser.name, email: currentUser.email }));
-    }
-  }, [currentUser?.id]);
+    const loadProfileAndCredits = async () => {
+      try {
+        setLoading(true);
+        const profile = await getMe();
+        setProfileData(profile);
+        setEditForm(prev => ({
+          ...prev,
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone || '',
+        }));
+
+        const creditsResp = await getCreditsAPI();
+        setCreditsData(creditsResp);
+      } catch (err) {
+        showToast(extractErrorMessage(err, 'Error cargando datos del perfil'));
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProfileAndCredits();
+  }, []);
 
   const stats = useMemo(() => {
     const pendingTotal = debts
       .filter(d => d.status !== 'paid')
       .reduce((s, d) => s + d.amount, 0);
     const fmtMoney = (n) => Number.isInteger(n) ? n.toString() : n.toFixed(2);
+    const creditBalance = creditsData?.balance ?? credits ?? 0;
 
     return [
       { id: 'ps1', label: 'Grupos activos', value: groups.length },
       { id: 'ps2', label: 'Por saldar', value: fmtMoney(pendingTotal), isCurrency: true },
-      { id: 'ps3', label: 'Créditos', value: fmtMoney(credits), isCurrency: true },
+      { id: 'ps3', label: 'Créditos', value: fmtMoney(creditBalance), isCurrency: true },
     ];
-  }, [groups, debts, credits]);
+  }, [groups, debts, credits, creditsData]);
 
   if (!currentUser) return null;
-  const user = currentUser;
+  const user = profileData || currentUser;
 
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
   };
 
-  const handleAvatarChange = (e) => {
+  const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -98,12 +125,19 @@ function Profile() {
       showToast('La imagen no debe superar 2 MB.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      dispatch({ type: 'SET_AVATAR', avatar: ev.target.result });
+
+    try {
+      setLoading(true);
+      const result = await uploadAvatar(file);
+      // Actualizar perfil local con la nueva URL
+      setProfileData(prev => ({ ...prev, avatarUrl: result.avatarUrl }));
+      dispatch({ type: 'SET_AVATAR', avatar: result.avatarUrl });
       showToast('Foto actualizada ✓');
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      showToast(extractErrorMessage(err, 'Error subiendo foto'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRemoveAvatar = () => {
@@ -116,9 +150,10 @@ function Profile() {
     setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const saveProfileChanges = () => {
+  const saveProfileChanges = async () => {
     const newName = editForm.name.trim().replace(/\s+/g, ' ');
     const newEmail = editForm.email.trim().toLowerCase();
+    const newPhone = editForm.phone.trim();
 
     if (newName.length < 3) {
       showToast('Ingresa un nombre válido.');
@@ -128,9 +163,13 @@ function Profile() {
       showToast('Correo electrónico inválido.');
       return;
     }
+    if (newPhone && !/^\+?\d{7,15}$/.test(newPhone)) {
+      showToast('Teléfono inválido.');
+      return;
+    }
     if (editForm.newPassword) {
-      if (editForm.currentPassword !== user.password) {
-        showToast('La contraseña actual es incorrecta.');
+      if (!editForm.currentPassword) {
+        showToast('Debes ingresar tu contraseña actual para cambiarla.');
         return;
       }
       if (editForm.newPassword.length < 6) {
@@ -139,21 +178,56 @@ function Profile() {
       }
     }
 
-    const changes = { name: newName, email: newEmail };
-    if (editForm.newPassword) changes.password = editForm.newPassword;
-
-    dispatch({ type: 'UPDATE_PROFILE', changes });
-    setEditForm(prev => ({ ...prev, currentPassword: '', newPassword: '' }));
-    showToast('Cambios guardados con éxito ✓');
+    try {
+      setLoading(true);
+      const payload = {
+        name: newName,
+        email: newEmail,
+        phone: newPhone,
+        currentPassword: editForm.currentPassword || undefined,
+        newPassword: editForm.newPassword || undefined,
+      };
+      const updated = await updateMe(payload);
+      setProfileData(updated);
+      dispatch({ type: 'UPDATE_PROFILE', userId: updated.id, changes: { name: updated.name, email: updated.email } });
+      setEditForm(prev => ({ ...prev, currentPassword: '', newPassword: '' }));
+      showToast('Cambios guardados con éxito ✓');
+    } catch (err) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.message || '';
+      // El backend devuelve 400 para "email ya en uso" (no 409 como dice la guia)
+      if (status === 409 || /email.*(uso|registrad)/i.test(msg)) {
+        showToast('El email ya está en uso.');
+      } else if (/contrase.+actual.+incorrecta/i.test(msg)) {
+        showToast('La contraseña actual es incorrecta.');
+      } else if (status === 400) {
+        showToast(extractErrorMessage(err, 'Datos inválidos.'));
+      } else {
+        showToast(extractErrorMessage(err, 'Error guardando cambios'));
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const buyCredits = (amount) => {
+  const buyCredits = async (amount) => {
     if (amount <= 0) {
       showToast('Ingresa una cantidad válida.');
       return;
     }
-    dispatch({ type: 'BUY_CREDITS', amount });
-    showToast(`+${amount} créditos comprados ✓`);
+
+    try {
+      setLoading(true);
+      await buyCreditAPI(amount);
+      // Releer estado real desde el backend
+      const updated = await getCreditsAPI();
+      setCreditsData(updated);
+      showToast(`+${amount} créditos comprados ✓`);
+    } catch (err) {
+      showToast(extractErrorMessage(err, 'Error comprando créditos'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCustomBuy = () => {
@@ -183,6 +257,7 @@ function Profile() {
     setActiveAccordion(activeAccordion === id ? null : id);
 
   const handleLogout = () => {
+    // El reducer LOGOUT ya limpia el token desde services/auth.service
     dispatch({ type: 'LOGOUT' });
     navigate('/login', { replace: true });
   };
@@ -190,10 +265,11 @@ function Profile() {
   const getInitials = () =>
     user.name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('');
 
+  const avatarSrc = resolveAssetUrl(profileData?.avatarUrl || profileAvatar);
   const renderAvatarVisual = (size = 'large') => (
     <div className={`avatar-circle${size === 'small' ? ' small' : ''}`}>
-      {profileAvatar
-        ? <img src={profileAvatar} alt={user.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+      {avatarSrc
+        ? <img src={avatarSrc} alt={user.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
         : getInitials()}
     </div>
   );
@@ -266,21 +342,23 @@ function Profile() {
               className="profile-input"
             />
 
-            <button className="save-changes-btn" onClick={saveProfileChanges}>
-              Guardar Cambios
+            <button className="save-changes-btn" onClick={saveProfileChanges} disabled={loading}>
+              {loading ? 'Guardando...' : 'Guardar Cambios'}
             </button>
           </div>
         );
 
       case "sm2": {
-        const recentTx = creditTransactions.slice(0, 5);
+        // El backend documenta el array como "history"; mantenemos compat con "transactions"
+        const recentTx = creditsData?.history || creditsData?.transactions || [];
+        const creditBalance = creditsData?.balance ?? credits ?? 0;
         return (
           <div className="payment-methods-container">
             <div className="credits-balance-card">
               <div>
                 <p className="credits-balance-label">Saldo disponible</p>
-                <p className="credits-balance-amount">{credits.toFixed(2)} créditos</p>
-                <p className="credits-balance-sub">≈ S/ {credits.toFixed(2)} (1 crédito = S/ 1)</p>
+                <p className="credits-balance-amount">{creditBalance.toFixed(2)} créditos</p>
+                <p className="credits-balance-sub">≈ S/ {creditBalance.toFixed(2)} (1 crédito = S/ 1)</p>
               </div>
               <div className="credits-balance-icon">💰</div>
             </div>
@@ -292,6 +370,7 @@ function Profile() {
                   key={pkg.id}
                   className="credits-package-btn"
                   onClick={() => buyCredits(pkg.credits)}
+                  disabled={loading}
                 >
                   <span className="credits-package-amount">+{pkg.credits}</span>
                   <span className="credits-package-price">S/ {pkg.credits}</span>
@@ -307,9 +386,10 @@ function Profile() {
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
                 className="profile-input"
+                disabled={loading}
               />
-              <button className="add-card-btn" onClick={handleCustomBuy}>
-                Comprar
+              <button className="add-card-btn" onClick={handleCustomBuy} disabled={loading}>
+                {loading ? 'Comprando...' : 'Comprar'}
               </button>
             </div>
 
@@ -320,16 +400,19 @@ function Profile() {
               <p className="credits-empty">Aún no has comprado créditos.</p>
             ) : (
               <div className="credits-history">
-                {recentTx.map(tx => (
-                  <div key={tx.id} className="credits-history-row">
-                    <span>
-                      {tx.type === 'purchase' ? '🛒 Compra' : '💸 Pago de deuda'}
-                    </span>
-                    <span style={{ color: tx.type === 'purchase' ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                      {tx.type === 'purchase' ? '+' : '-'}{tx.amount.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
+                {recentTx.map((tx, idx) => {
+                  // El backend usa "PURCHASE" / "SPEND" (uppercase)
+                  const isPurchase = String(tx.type || '').toUpperCase() === 'PURCHASE';
+                  const amount = Number(tx.amount) || 0;
+                  return (
+                    <div key={tx.id || `tx-${idx}`} className="credits-history-row">
+                      <span>{isPurchase ? '🛒 Compra' : '💸 Pago de deuda'}</span>
+                      <span style={{ color: isPurchase ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                        {isPurchase ? '+' : '-'}{amount.toFixed(2)}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -468,7 +551,7 @@ function Profile() {
                     <span>{item.label}</span>
                     {item.id === 'sm2' && (
                       <span className="credits-badge">
-                        {credits.toFixed(0)}
+                        {(creditsData?.balance ?? credits ?? 0).toFixed(0)}
                       </span>
                     )}
                   </div>

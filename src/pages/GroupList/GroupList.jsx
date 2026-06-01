@@ -1,20 +1,45 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp } from '../../context/AppContext'
+import { getMyGroups } from '../../services/groups.service'
+import { extractErrorMessage } from '../../services/api'
 import './GroupList.css'
 
 function GroupList() {
   const navigate = useNavigate()
-  const { groups, expenses } = useApp()
+  const [groups, setGroups] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const getGroupTotal = (groupId) =>
-    expenses
-      .filter(e => e.groupId === groupId)
-      .reduce((sum, e) => sum + e.amount, 0)
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    getMyGroups()
+      .then((data) => {
+        if (cancelled) return
+        const sorted = [...data].sort((a, b) =>
+          (a.name || '').localeCompare(b.name || '', 'es')
+        )
+        setGroups(sorted)
+        setError(null)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setError(extractErrorMessage(err, 'No pudimos cargar tus grupos.'))
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  const getMemberCount = (g) =>
+    g.memberCount ?? g.members?.length ?? g.memberIds?.length ?? 0
 
   return (
     <div className="group-list">
       <div className="group-list__header">
         <h1 className="group-list__title">Mis grupos</h1>
+        <p className="group-list__subtitle">
+          {loading ? 'Cargando...' : `${groups.length} grupo${groups.length !== 1 ? 's' : ''}`}
+        </p>
         <button
           className="group-list__new-btn"
           onClick={() => navigate('/groups/new')}
@@ -23,7 +48,15 @@ function GroupList() {
         </button>
       </div>
 
-      {groups.length === 0 ? (
+      {error && (
+        <p className="group-list__error" style={{ color: '#ff4d4d', padding: '1rem' }}>
+          ⚠️ {error}
+        </p>
+      )}
+
+      {loading ? (
+        <p style={{ textAlign: 'center', padding: '2rem' }}>Cargando grupos...</p>
+      ) : groups.length === 0 ? (
         <div className="group-list__empty">
           <div className="group-list__empty-icon">
             <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
@@ -53,21 +86,27 @@ function GroupList() {
         <>
           <div className="group-list__grid">
             {groups.map(group => {
-              const total = getGroupTotal(group.id)
-              const memberCount = group.memberIds.length
+              const memberCount = getMemberCount(group)
               return (
                 <div
                   key={group.id}
                   className="group-card"
                   onClick={() => navigate(`/groups/${group.id}`)}
                 >
-                  <div className="group-card__icon">{group.emoji}</div>
+                  <div className="group-card__icon">{group.emoji || '📦'}</div>
                   <div className="group-card__info">
-                    <h3 className="group-card__name">{group.name}</h3>
+                    <h3
+                      className="group-card__name"
+                      title={group.name}
+                    >
+                      {group.name}
+                    </h3>
                     <p className="group-card__members">{memberCount} miembro{memberCount !== 1 ? 's' : ''}</p>
                   </div>
                   <span className="group-card__total">
-                    S/ {total.toLocaleString('es-PE', { minimumFractionDigits: 0 })}
+                    {typeof group.myBalance === 'number'
+                      ? `S/ ${group.myBalance.toFixed(2)}`
+                      : ''}
                   </span>
                 </div>
               )

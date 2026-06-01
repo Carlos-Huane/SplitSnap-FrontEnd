@@ -1,9 +1,12 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
+import { getMyGroups } from '../../services/groups.service'
+import { getMe } from '../../services/users.service'
+import { extractErrorMessage, resolveAssetUrl } from '../../services/api'
 import '../../styles/dashboard.css'
 
-const getInitials = (fullName) =>
+const getInitials = (fullName = '') =>
   fullName
     .split(' ')
     .filter(Boolean)
@@ -11,50 +14,46 @@ const getInitials = (fullName) =>
     .map(n => n[0].toUpperCase())
     .join('')
 
-const formatRelative = (isoDate) => {
-  const today = new Date()
-  const date = new Date(isoDate + 'T00:00:00')
-  const diff = Math.floor((today - date) / (1000 * 60 * 60 * 24))
-  if (diff <= 0) return 'Hoy'
-  if (diff === 1) return 'Ayer'
-  if (diff < 7) return `Hace ${diff} días`
-  return date.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })
-}
-
 function Dashboard() {
   const navigate = useNavigate()
-  const { groups, expenses, debts, profileAvatar, currentUser } = useApp()
+  const { profileAvatar, currentUser } = useApp()
 
-  const pendingTotal = useMemo(() => {
-    return debts
-      .filter(d => d.status !== 'paid')
-      .reduce((sum, d) => sum + d.amount, 0)
-  }, [debts])
+  const [groups, setGroups] = useState([])
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const recentActivity = useMemo(() => {
-    return expenses
-      .map(e => {
-        const group = groups.find(g => g.id === e.groupId)
-        return {
-          id: e.id,
-          icon: group?.emoji || '💸',
-          title: e.description,
-          info: `${group?.name || 'Grupo'} · ${formatRelative(e.date)}`,
-          amount: e.amount,
-          groupId: e.groupId,
-          date: e.date,
-        }
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    Promise.all([getMyGroups(), getMe().catch(() => null)])
+      .then(([gs, me]) => {
+        if (cancelled) return
+        setGroups(gs || [])
+        if (me) setProfile(me)
+        setError(null)
       })
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 5)
-  }, [expenses, groups])
+      .catch((err) => {
+        if (cancelled) return
+        setError(extractErrorMessage(err, 'No pudimos cargar tu dashboard.'))
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [])
 
-  if (!currentUser) return null
-  const firstName = currentUser.name.split(' ')[0]
+  const userName = profile?.name || currentUser?.name || ''
+  const firstName = userName.split(' ')[0] || 'Usuario'
+  const avatarSrc = resolveAssetUrl(profile?.avatarUrl || profileAvatar)
+
+  // myBalance/recentActivity son gaps conocidos del backend (no vienen en /api/groups)
+  // Mostramos placeholders hasta que el backend los agregue.
+  const pendingTotal = useMemo(() => {
+    return groups.reduce((sum, g) => sum + (Number(g.myBalance) || 0), 0)
+  }, [groups])
 
   const balanceLabel = pendingTotal > 0
     ? 'Total por saldar en tus grupos'
-    : 'Estás al día, no hay deudas pendientes'
+    : 'Estás al día'
 
   return (
     <div className="dashboard">
@@ -65,11 +64,11 @@ function Dashboard() {
         </div>
 
         <div className="user-info" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
-          <span className="user-name">{currentUser.name}</span>
+          <span className="user-name">{userName}</span>
           <div className="avatar">
-            {profileAvatar
-              ? <img src={profileAvatar} alt={currentUser.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-              : getInitials(currentUser.name)}
+            {avatarSrc
+              ? <img src={avatarSrc} alt={userName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              : getInitials(userName)}
           </div>
         </div>
       </div>
@@ -82,47 +81,9 @@ function Dashboard() {
         <span className="balance-sub">{balanceLabel}</span>
       </div>
 
-      <div className="section">
-        <div className="section-header">
-          <h3>Actividad reciente</h3>
-          {recentActivity.length > 0 && (
-            <span className="link" onClick={() => navigate('/historial')}>Ver todo</span>
-          )}
-        </div>
-
-        {recentActivity.length === 0 ? (
-          <div className="dashboard-empty">
-            <span className="dashboard-empty__icon">📭</span>
-            <p className="dashboard-empty__title">Aún no hay actividad</p>
-            <p className="dashboard-empty__desc">
-              Crea un grupo y registra tu primer gasto para verlo aquí.
-            </p>
-            <button className="btn primary" onClick={() => navigate('/groups')}>
-              Ir a Mis grupos
-            </button>
-          </div>
-        ) : (
-          <div className="activity-list">
-            {recentActivity.map((item) => (
-              <div
-                className="activity-item"
-                key={item.id}
-                onClick={() => navigate(`/groups/${item.groupId}`)}
-                style={{ cursor: 'pointer' }}
-              >
-                <div className="icon">{item.icon}</div>
-                <div className="info">
-                  <p>{item.title}</p>
-                  <span>{item.info}</span>
-                </div>
-                <div className="amount">
-                  S/ {item.amount.toFixed(2)}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {error && (
+        <p style={{ color: '#ff4d4d', padding: '0 1rem' }}>⚠️ {error}</p>
+      )}
 
       <div className="section">
         <div className="section-header">
@@ -132,7 +93,9 @@ function Dashboard() {
           )}
         </div>
 
-        {groups.length === 0 ? (
+        {loading ? (
+          <p style={{ padding: '1rem' }}>Cargando...</p>
+        ) : groups.length === 0 ? (
           <div className="dashboard-empty">
             <span className="dashboard-empty__icon">👥</span>
             <p className="dashboard-empty__title">No tienes grupos todavía</p>
@@ -146,10 +109,7 @@ function Dashboard() {
         ) : (
           <div className="activity-list">
             {groups.slice(0, 4).map(g => {
-              const total = expenses
-                .filter(e => e.groupId === g.id)
-                .reduce((sum, e) => sum + e.amount, 0)
-              const memberCount = g.memberIds.length
+              const memberCount = g.memberCount ?? g.members?.length ?? 0
               return (
                 <div
                   key={g.id}
@@ -157,12 +117,11 @@ function Dashboard() {
                   onClick={() => navigate(`/groups/${g.id}`)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <div className="icon">{g.emoji}</div>
+                  <div className="icon">{g.emoji || '📦'}</div>
                   <div className="info">
                     <p>{g.name}</p>
                     <span>{memberCount} miembro{memberCount !== 1 ? 's' : ''}</span>
                   </div>
-                  <div className="amount">S/ {total.toFixed(2)}</div>
                 </div>
               )
             })}

@@ -1,12 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp, genId } from '../../context/AppContext'
+import { useApp } from '../../context/AppContext'
+import { register as registerAPI, isAuthenticated } from '../../services/auth.service'
+import { extractErrorMessage } from '../../services/api'
 import '../Login/Login.css'
 import './Register.css'
 
 function Register() {
   const navigate = useNavigate()
-  const { allUsers, dispatch } = useApp()
+  const { dispatch } = useApp()
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [navigate])
 
   const [formData, setFormData] = useState({
     name: '',
@@ -16,14 +24,16 @@ function Register() {
     confirmPassword: ''
   })
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault()
     setError('')
+    setLoading(true)
 
     const name = formData.name.trim().replace(/\s+/g, ' ')
     const email = formData.email.trim().toLowerCase()
@@ -31,48 +41,56 @@ function Register() {
 
     if (name.length < 3) {
       setError('Ingresa tu nombre completo (mínimo 3 caracteres).')
+      setLoading(false)
       return
     }
     if (!/^[A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s[A-Za-zÁÉÍÓÚÑáéíóúñ]+)+$/.test(name)) {
       setError('El nombre debe contener nombre y apellido, solo letras.')
+      setLoading(false)
       return
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('Ingresa un correo electrónico válido.')
+      setLoading(false)
       return
     }
     if (!/^\+?\d{7,15}$/.test(phone)) {
       setError('El teléfono debe tener entre 7 y 15 dígitos (puede iniciar con +).')
+      setLoading(false)
       return
     }
     if (formData.password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres.')
+      setLoading(false)
       return
     }
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden.')
+      setLoading(false)
       return
     }
 
-    const exists = allUsers.some((u) => u.email.toLowerCase() === email)
-    if (exists) {
-      setError('Este correo ya está registrado.')
-      return
-    }
+    try {
+      const { token, user } = await registerAPI({
+        name,
+        email,
+        phone,
+        password: formData.password,
+      })
 
-    const newUser = {
-      id: genId('u'),
-      name,
-      email,
-      phone,
-      password: formData.password,
-      avatar: `https://i.pravatar.cc/150?u=${email}`,
-      currency: 'PEN',
-      createdAt: new Date().toISOString().split('T')[0],
+      dispatch({ type: 'REGISTER_USER', user, token })
+      navigate('/dashboard', { replace: true })
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setError('Este correo ya está registrado.')
+      } else if (err.response?.status === 400) {
+        setError(extractErrorMessage(err, 'Datos inválidos. Revisa el formulario.'))
+      } else {
+        setError(extractErrorMessage(err, 'Error en el registro. Intenta de nuevo.'))
+      }
+    } finally {
+      setLoading(false)
     }
-
-    dispatch({ type: 'REGISTER_USER', user: newUser })
-    navigate('/dashboard', { replace: true })
   }
 
   return (
@@ -161,8 +179,8 @@ function Register() {
             </div>
           </div>
 
-          <button className="login__btn" type="submit">
-            Registrarse
+          <button className="login__btn" type="submit" disabled={loading}>
+            {loading ? 'Registrando...' : 'Registrarse'}
           </button>
 
           <p className="login__link">

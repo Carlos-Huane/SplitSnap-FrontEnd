@@ -1,7 +1,9 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { mockReceiptItems } from '../../data/groups'
-import { useApp, genId, buildDebts } from '../../context/AppContext'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { createExpense } from '../../services/expenses.service'
+import { getGroup } from '../../services/groups.service'
+import { extractErrorMessage } from '../../services/api'
+import { getCurrentUserFromToken } from '../../services/auth.service'
 import './ReviewItems.css'
 
 const avatarColors = ['#F97316', '#3B82F6', '#22C55E', '#8B5CF6', '#EF4444']
@@ -9,90 +11,188 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() || '?'
 
 function ReviewItems() {
   const navigate = useNavigate()
-  const { id } = useParams()
-  const { groups, allUsers, currentUser, dispatch } = useApp()
-  const users = allUsers
+  const { id: groupId } = useParams()
+  const { state } = useLocation()
 
-  const group = groups.find(g => g.id === id)
-  const members = group
-    ? group.memberIds.map(uid => users.find(u => u.id === uid)).filter(Boolean)
-    : []
+  const ocr = state || {}
+  const tokenUser = getCurrentUserFromToken()
 
-  // Por defecto: todos los ítems asignados a todos los miembros
-  const [assignments, setAssignments] = useState(() =>
-    Object.fromEntries(mockReceiptItems.map(item => [item.id, members.map(m => m.id)]))
+  const [loadingGroup, setLoadingGroup] = useState(true)
+  const [members, setMembers] = useState([])
+  const [groupError, setGroupError] = useState(null)
+
+  const detectedAmountNumber = typeof ocr.detectedAmount === 'number' ? ocr.detectedAmount : 0
+  const ocrFailed = !detectedAmountNumber || detectedAmountNumber <= 0
+
+  const [description, setDescription] = useState(
+    ocr.description ? String(ocr.description).replace(/^Escaneo:\s*/, '') : ''
   )
-  const [paidBy, setPaidBy] = useState(currentUser.id)
+  const [amount, setAmount] = useState(
+    detectedAmountNumber > 0 ? detectedAmountNumber.toFixed(2) : ''
+  )
+  const [paidBy, setPaidBy] = useState(tokenUser?.id || '')
+  const [selectedMembers, setSelectedMembers] = useState([])
+  const [splits, setSplits] = useState({})
 
-  const toggleAssign = (itemId, userId) => {
-    setAssignments(prev => {
-      const current = prev[itemId]
-      const isAssigned = current.includes(userId)
-      return {
-        ...prev,
-        [itemId]: isAssigned
-          ? current.filter(u => u !== userId)
-          : [...current, userId],
-      }
-    })
-  }
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
 
-  const total = mockReceiptItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  useEffect(() => {
+    if (!groupId) return
+    let cancelled = false
+    setLoadingGroup(true)
+    getGroup(groupId)
+      .then((data) => {
+        if (cancelled) return
+        const fetchedMembers = (data?.members || [])
+          .map((gm) => gm.user || gm)
+          .filter(Boolean)
+        setMembers(fetchedMembers)
+        const memberIds = fetchedMembers.map((m) => m.id)
+        setSelectedMembers(memberIds)
+        if (!paidBy && tokenUser?.id && memberIds.includes(tokenUser.id)) {
+          setPaidBy(tokenUser.id)
+        } else if (!paidBy && memberIds.length > 0) {
+          setPaidBy(memberIds[0])
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setGroupError(extractErrorMessage(err, 'No pudimos cargar el grupo.'))
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingGroup(false)
+      })
+    return () => { cancelled = true }
+  }, [groupId])
 
-  // Resumen por miembro
-  const memberSummary = members.map((member, idx) => {
-    if (!member) return null
-    const assignedItems = mockReceiptItems.filter(item =>
-      assignments[item.id]?.includes(member.id)
-    )
-    const memberTotal = assignedItems.reduce((sum, item) => {
-      const splitCount = assignments[item.id]?.length || 1
-      return sum + (item.price * item.quantity) / splitCount
-    }, 0)
-    return { member, idx, assignedCount: assignedItems.length, memberTotal }
-  }).filter(Boolean)
+  const amountNumber = useMemo(() => {
+    const parsed = parseFloat(amount)
+    return Number.isFinite(parsed) ? parsed : 0
+  }, [amount])
 
-  const handleConfirm = () => {
-    // Construir splitBetween desde resumen de miembros
-    const splitBetween = memberSummary.map(({ member, memberTotal }) => ({
-      userId: member.id,
-      amount: parseFloat(memberTotal.toFixed(2)),
-    }))
-
-    const expense = {
-      id: genId('e'),
-      groupId: id,
-      description: 'Recibo escaneado',
-      amount: parseFloat(total.toFixed(2)),
-      paidBy,
-      splitBetween,
-      date: new Date().toISOString().split('T')[0],
-      items: mockReceiptItems.map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        assignedTo: assignments[item.id] || [],
-      })),
+  // Auto-split equitativo cuando cambian monto o miembros seleccionados
+  useEffect(() => {
+    if (selectedMembers.length === 0 || amountNumber <= 0) {
+      setSplits({})
+      return
     }
+    const equal = amountNumber / selectedMembers.length
+    const fixed = parseFloat(equal.toFixed(2))
+    setSplits((prev) => {
+      const next = {}
+      selectedMembers.forEach((uid) => {
+        next[uid] = prev[uid] !== undefined ? prev[uid] : fixed
+      })
+      return next
+    })
+  }, [amountNumber, selectedMembers])
 
-    const debts = buildDebts(expense)
-    dispatch({ type: 'ADD_EXPENSE', expense, debts })
-    navigate(`/groups/${id}/debts`)
+  const toggleMember = (uid) => {
+    setSelectedMembers((prev) =>
+      prev.includes(uid) ? prev.filter((x) => x !== uid) : [...prev, uid]
+    )
   }
+
+  const handleSplitChange = (uid, value) => {
+    setSplits((prev) => ({ ...prev, [uid]: value === '' ? '' : parseFloat(value) }))
+  }
+
+  const splitsSum = useMemo(
+    () => selectedMembers.reduce((acc, uid) => acc + (parseFloat(splits[uid]) || 0), 0),
+    [selectedMembers, splits]
+  )
+
+  const splitsValid = Math.abs(splitsSum - amountNumber) <= 0.01
+
+  const validate = () => {
+    if (!description.trim()) return 'Agrega una descripción.'
+    if (amountNumber <= 0) return 'El monto debe ser mayor a 0.'
+    if (!paidBy) return 'Selecciona quién pagó.'
+    if (selectedMembers.length === 0) return 'Selecciona al menos un miembro para dividir.'
+    if (!splitsValid) {
+      return `La suma de los splits (S/ ${splitsSum.toFixed(2)}) no coincide con el monto total (S/ ${amountNumber.toFixed(2)}).`
+    }
+    return null
+  }
+
+  const handleConfirm = async () => {
+    const validationError = validate()
+    if (validationError) {
+      setSubmitError(validationError)
+      return
+    }
+    setSubmitError(null)
+    setSubmitting(true)
+    try {
+      const payload = {
+        description: description.trim(),
+        amount: amountNumber,
+        paidBy,
+        date: new Date().toISOString().split('T')[0],
+        splitBetween: selectedMembers.map((uid) => ({
+          userId: uid,
+          amount: parseFloat((parseFloat(splits[uid]) || 0).toFixed(2)),
+        })),
+      }
+      await createExpense(groupId, payload)
+      navigate(`/groups/${groupId}`)
+    } catch (err) {
+      setSubmitError(extractErrorMessage(err, 'No pudimos registrar el gasto. Intenta nuevamente.'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (loadingGroup) {
+    return (
+      <div className="review-items">
+        <div className="review-items__header">
+          <button className="review-items__back" onClick={() => navigate(-1)}>←</button>
+          <h1 className="review-items__title">Cargando grupo...</h1>
+        </div>
+      </div>
+    )
+  }
+
+  if (groupError) {
+    return (
+      <div className="review-items">
+        <div className="review-items__header">
+          <button className="review-items__back" onClick={() => navigate(-1)}>←</button>
+          <h1 className="review-items__title">Error</h1>
+        </div>
+        <div className="review-items__list">
+          <p className="review-items__error">{groupError}</p>
+        </div>
+      </div>
+    )
+  }
+
+  const rawText = Array.isArray(ocr.extractedItems) ? ocr.extractedItems.join('\n') : ''
 
   return (
     <div className="review-items">
-      {/* Header */}
       <div className="review-items__header">
         <button className="review-items__back" onClick={() => navigate(-1)}>←</button>
         <div>
           <h1 className="review-items__title">Revisar recibo</h1>
-          <p className="review-items__subtitle">Asigna cada ítem a quien lo consumió</p>
+          <p className="review-items__subtitle">Verifica los datos detectados antes de confirmar</p>
         </div>
       </div>
 
-      {/* Quién pagó */}
+      {ocrFailed && (
+        <div className="review-items__ocr-warning">
+          <span className="review-items__ocr-warning-icon">⚠️</span>
+          <div>
+            <p className="review-items__ocr-warning-title">No detectamos el monto automáticamente</p>
+            <p className="review-items__ocr-warning-desc">
+              La boleta no tenía un total claro (ej. "TOTAL", "PRECIO VENTA", "IMPORTE TOTAL"). Revisa el texto detectado e ingresa el monto manualmente.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="review-items__paid-by">
         <p className="review-items__paid-label">¿Quién pagó el recibo?</p>
         <div className="review-items__paid-members">
@@ -109,85 +209,128 @@ function ReviewItems() {
               >
                 {getInitial(m.name)}
               </span>
-              {m.id === currentUser.id ? 'Tú' : m.name.split(' ')[0]}
+              {m.id === tokenUser?.id ? 'Tú' : (m.name?.split(' ')[0] || 'Usuario')}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Two-column layout on desktop */}
       <div className="review-items__body">
-        {/* Items list */}
         <div className="review-items__list">
-          {mockReceiptItems.map(item => {
-            const assignedTo = assignments[item.id] || []
-            return (
-              <div key={item.id} className="review-item">
-                <div className="review-item__info">
-                  <p className="review-item__name">{item.name}</p>
-                  <p className="review-item__price">
-                    S/ {(item.price * item.quantity).toFixed(2)}
-                    {item.quantity > 1 && (
-                      <span className="review-item__qty"> ×{item.quantity}</span>
+          <div className="review-item review-item--editable">
+            <label className="review-item__field">
+              <span className="review-item__field-label">Descripción</span>
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Ej: Cena en restaurante"
+                className="review-item__field-input"
+              />
+            </label>
+            <label className="review-item__field">
+              <span className="review-item__field-label">Monto total (S/)</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="review-item__field-input"
+              />
+            </label>
+          </div>
+
+          {rawText && (
+            <details className="review-item review-item--ocr">
+              <summary>Ver texto extraído del recibo</summary>
+              <pre className="review-item__ocr-text">{rawText}</pre>
+            </details>
+          )}
+
+          <div className="review-item review-item--splits">
+            <p className="review-item__name">Dividir entre</p>
+            <div className="review-item__splits-list">
+              {members.map((m, idx) => {
+                const checked = selectedMembers.includes(m.id)
+                return (
+                  <div key={m.id} className="split-row">
+                    <label className="split-row__check">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleMember(m.id)}
+                      />
+                      <span
+                        className="split-row__avatar"
+                        style={{ background: avatarColors[idx % avatarColors.length] }}
+                      >
+                        {getInitial(m.name)}
+                      </span>
+                      <span className="split-row__name">
+                        {m.id === tokenUser?.id ? 'Tú' : (m.name?.split(' ')[0] || 'Usuario')}
+                      </span>
+                    </label>
+                    {checked && (
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={splits[m.id] ?? ''}
+                        onChange={(e) => handleSplitChange(m.id, e.target.value)}
+                        className="split-row__amount"
+                      />
                     )}
+                  </div>
+                )
+              })}
+            </div>
+            <p className={`review-item__splits-status ${splitsValid ? 'ok' : 'mismatch'}`}>
+              Suma de splits: S/ {splitsSum.toFixed(2)} / S/ {amountNumber.toFixed(2)}
+              {splitsValid ? ' ✓' : ' ✗ (no coincide)'}
+            </p>
+          </div>
+        </div>
+
+        <div className="review-items__summary">
+          <h2 className="review-items__summary-title">Resumen</h2>
+          {selectedMembers.map((uid) => {
+            const member = members.find((x) => x.id === uid)
+            if (!member) return null
+            const idx = members.indexOf(member)
+            return (
+              <div key={uid} className="summary-row">
+                <div className="summary-row__dot" style={{ background: avatarColors[idx % avatarColors.length] }} />
+                <div className="summary-row__info">
+                  <p className="summary-row__name">
+                    {member.id === tokenUser?.id ? 'Tú' : (member.name?.split(' ')[0] || 'Usuario')}
                   </p>
                 </div>
-                <div className="review-item__avatars">
-                  {members.map((member, idx) => {
-                    if (!member) return null
-                    const assigned = assignedTo.includes(member.id)
-                    return (
-                      <button
-                        key={member.id}
-                        className={`review-item__avatar ${assigned ? 'assigned' : 'unassigned'}`}
-                        style={{
-                          background: assigned ? avatarColors[idx % avatarColors.length] : '#D1D5DB',
-                          zIndex: idx,
-                        }}
-                        onClick={() => toggleAssign(item.id, member.id)}
-                        title={member.id === currentUser.id ? 'Tú' : member.name.split(' ')[0]}
-                      >
-                        {getInitial(member.name)}
-                      </button>
-                    )
-                  })}
-                </div>
+                <span className="summary-row__amount">
+                  S/ {(parseFloat(splits[uid]) || 0).toFixed(2)}
+                </span>
               </div>
             )
           })}
         </div>
-
-        {/* Summary panel — desktop only */}
-        <div className="review-items__summary">
-          <h2 className="review-items__summary-title">Resumen de división</h2>
-          {memberSummary.map(({ member, idx, assignedCount, memberTotal }) => (
-            <div key={member.id} className="summary-row">
-              <div
-                className="summary-row__dot"
-                style={{ background: avatarColors[idx % avatarColors.length] }}
-              />
-              <div className="summary-row__info">
-                <p className="summary-row__name">
-                  {member.id === currentUser.id ? 'Tú' : member.name.split(' ')[0]}
-                </p>
-                <p className="summary-row__items">
-                  {assignedCount} ítem{assignedCount !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <span className="summary-row__amount">S/ {memberTotal.toFixed(2)}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* Footer */}
+      {submitError && (
+        <div className="review-items__submit-error">{submitError}</div>
+      )}
+
       <div className="review-items__footer">
         <div className="review-items__total">
           <span className="review-items__total-label">Total</span>
-          <span className="review-items__total-amount">S/ {total.toFixed(2)}</span>
+          <span className="review-items__total-amount">S/ {amountNumber.toFixed(2)}</span>
         </div>
-        <button className="review-items__confirm" onClick={handleConfirm}>
-          Confirmar y dividir
+        <button
+          className="review-items__confirm"
+          onClick={handleConfirm}
+          disabled={submitting}
+        >
+          {submitting ? 'Guardando...' : 'Confirmar y dividir'}
         </button>
       </div>
     </div>

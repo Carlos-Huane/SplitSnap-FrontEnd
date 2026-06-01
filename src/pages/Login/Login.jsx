@@ -1,31 +1,53 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
+import { login as loginAPI, isAuthenticated } from '../../services/auth.service'
+import { extractErrorMessage } from '../../services/api'
 import './Login.css'
 
 function Login() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { allUsers, dispatch } = useApp()
+  const { dispatch } = useApp()
+
+  // Si hay sesión válida, redirigir a dashboard (persistencia de sesión)
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [navigate])
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setLoading(true)
 
-    const normalizedEmail = email.trim().toLowerCase()
-    const userFound = allUsers.find(
-      (user) => user.email.toLowerCase() === normalizedEmail && user.password === password
-    )
+    try {
+      const { token, user } = await loginAPI({
+        email: email.trim().toLowerCase(),
+        password,
+      })
 
-    if (userFound) {
-      dispatch({ type: 'LOGIN', userId: userFound.id })
+      // El servicio ya guardó el token; el reducer registra al user
+      dispatch({ type: 'LOGIN', userId: user.id, user, token })
+
       const redirect = location.state?.from || '/dashboard'
       navigate(redirect, { replace: true })
-    } else {
-      setError('Credenciales incorrectas. Intenta de nuevo.')
+    } catch (err) {
+      if (err.response?.status === 401) {
+        setError('Credenciales incorrectas.')
+      } else if (err.response?.status === 400) {
+        setError('Datos inválidos.')
+      } else {
+        setError(extractErrorMessage(err, 'Error en login. Intenta de nuevo.'))
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -80,8 +102,8 @@ function Login() {
             </div>
           </div>
 
-          <button className="login__btn" type="submit">
-            Iniciar sesión
+          <button className="login__btn" type="submit" disabled={loading}>
+            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
           </button>
 
           <p className="login__link">
