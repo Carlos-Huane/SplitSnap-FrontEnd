@@ -54,4 +54,19 @@ export const extractErrorMessage = (error, fallback = 'Ocurrio un error inespera
   return fallback
 }
 
+/**
+ * El backend devuelve avatares como ruta relativa (/uploads/avatars/xxx.jpg).
+ * En produccion el frontend vive en Vercel y el backend en Railway, asi que
+ * hay que anteponer la base del API si la URL no es absoluta.
+ *
+ * Si el path ya es null/dataURL/absoluta, lo devuelve tal cual.
+ */
+export const resolveAssetUrl = (path) => {
+  if (!path) return path
+  if (typeof path !== 'string') return path
+  if (path.startsWith('data:') || /^https?:\/\//i.test(path)) return path
+  const base = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(/\/$/, '')
+  return path.startsWith('/') ? `${base}${path}` : `${base}/${path}`
+}
+
 export default api

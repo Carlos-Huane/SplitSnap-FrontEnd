@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Boleta Demo — Supermercado</title>
+<style>
+  body {
+    margin: 0;
+    padding: 40px;
+    background: #e5e5e5;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    justify-content: center;
+  }
+  .receipt {
+    background: #ffffff;
+    width: 360px;
+    padding: 28px 24px;
+    color: #000;
+    font-size: 15px;
+    line-height: 1.55;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .receipt h1 {
+    text-align: center;
+    font-size: 22px;
+    margin: 0 0 4px 0;
+    letter-spacing: 1px;
+  }
+  .meta { text-align: center; font-size: 13px; margin-bottom: 12px; }
+  hr { border: 0; border-top: 1px dashed #000; margin: 10px 0; }
+  .row { display: flex; justify-content: space-between; }
+  .total { font-size: 18px; font-weight: bold; margin-top: 6px; }
+  .small { font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="receipt">
+  <h1>MERCADO LIMA EXPRESS</h1>
+  <div class="meta">
+    Supermercado<br>
+    Av. Brasil 456, Pueblo Libre<br>
+    RUC: 20534567890<br>
+    Telf: 01-666-7890
+  </div>
+  <hr>
+  <div>BOLETA DE VENTA ELECTRONICA</div>
+  <div>B002-005678</div>
+  <div>FECHA: 01/06/2026  HORA: 18:22</div>
+  <hr>
+  <div>CODIGO  DESCRIPCION         IMPORTE</div>
+  <div class="row"><span>001 ARROZ 5KG</span><span>22.50</span></div>
+  <div class="row"><span>002 ACEITE PRIMOR 1L</span><span>14.90</span></div>
+  <div class="row"><span>003 POLLO ENTERO 2KG</span><span>28.60</span></div>
+  <div class="row"><span>004 PAPA AMARILLA KG</span><span>4.20</span></div>
+  <div class="row"><span>005 LECHE GLORIA X6</span><span>21.80</span></div>
+  <div class="row"><span>006 PAN INTEGRAL</span><span>8.50</span></div>
+  <hr>
+  <div class="row"><span>OP. GRAVADAS</span><span>S/ 84.32</span></div>
+  <div class="row"><span>IGV 18%</span><span>S/ 15.18</span></div>
+  <hr>
+  <div class="row total"><span>IMPORTE TOTAL</span><span>S/ 99.50</span></div>
+  <hr>
+  <div class="small">SON: NOVENTA Y NUEVE CON 50/100 SOLES</div>
+  <div class="small">VISA *4521  S/ 99.50</div>
+  <br>
+  <div class="small" style="text-align:center;">GRACIAS POR SU COMPRA</div>
+</div>
+</body>
+</html>

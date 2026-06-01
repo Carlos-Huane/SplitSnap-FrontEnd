@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Boleta Demo — Bodega</title>
+<style>
+  body {
+    margin: 0;
+    padding: 40px;
+    background: #e5e5e5;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    justify-content: center;
+  }
+  .receipt {
+    background: #ffffff;
+    width: 360px;
+    padding: 28px 24px;
+    color: #000;
+    font-size: 15px;
+    line-height: 1.55;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .receipt h1 {
+    text-align: center;
+    font-size: 22px;
+    margin: 0 0 4px 0;
+    letter-spacing: 1px;
+  }
+  .meta { text-align: center; font-size: 13px; margin-bottom: 12px; }
+  hr { border: 0; border-top: 1px dashed #000; margin: 10px 0; }
+  .row { display: flex; justify-content: space-between; }
+  .total { font-size: 18px; font-weight: bold; margin-top: 6px; }
+  .small { font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="receipt">
+  <h1>BODEGA SAN MIGUEL</h1>
+  <div class="meta">
+    Abarrotes Generales<br>
+    Jr. Junin 789, Cercado<br>
+    RUC: 10456789012
+  </div>
+  <hr>
+  <div>BOLETA DE VENTA ELECTRONICA</div>
+  <div>B003-009999</div>
+  <div>FECHA: 01/06/2026</div>
+  <hr>
+  <div class="row"><span>3 GASEOSA 1.5L</span><span>21.00</span></div>
+  <div class="row"><span>2 PAQUETE GALLETA</span><span>8.00</span></div>
+  <div class="row"><span>1 CHOCOLATE SUBLIME</span><span>3.50</span></div>
+  <div class="row"><span>4 AGUA MINERAL 600ML</span><span>10.00</span></div>
+  <div class="row"><span>1 BOLSA HIELO</span><span>5.00</span></div>
+  <hr>
+  <div class="row"><span>VALOR VENTA</span><span>S/ 39.83</span></div>
+  <div class="row"><span>I.G.V.</span><span>S/ 7.17</span></div>
+  <hr>
+  <div class="row total"><span>PRECIO VENTA</span><span>S/ 47.00</span></div>
+  <hr>
+  <div class="small">SON: CUARENTA Y SIETE CON 00/100 SOLES</div>
+  <div class="small">EFECTIVO  S/ 50.00</div>
+  <div class="small">VUELTO    S/  3.00</div>
+  <br>
+  <div class="small" style="text-align:center;">GRACIAS POR SU PREFERENCIA</div>
+</div>
+</body>
+</html>
