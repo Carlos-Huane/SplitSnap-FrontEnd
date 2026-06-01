@@ -1,31 +1,55 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
+import { login as loginAPI, saveToken, getToken } from '../../api/authService'
 import './Login.css'
 
 function Login() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { allUsers, dispatch } = useApp()
+  const { dispatch } = useApp()
+
+  // Si hay token válido, redirigir a dashboard (persistencia de sesión)
+  useEffect(() => {
+    if (getToken()) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [navigate])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setLoading(true)
 
-    const normalizedEmail = email.trim().toLowerCase()
-    const userFound = allUsers.find(
-      (user) => user.email.toLowerCase() === normalizedEmail && user.password === password
-    )
+    try {
+      // Llamar al backend
+      const response = await loginAPI({
+        email: email.trim().toLowerCase(),
+        password,
+      })
 
-    if (userFound) {
-      dispatch({ type: 'LOGIN', userId: userFound.id })
+      // Guardar token y actualizar contexto
+      saveToken(response.token)
+      dispatch({ type: 'LOGIN', userId: response.user.id })
+
+      // Navegar al dashboard
       const redirect = location.state?.from || '/dashboard'
       navigate(redirect, { replace: true })
-    } else {
-      setError('Credenciales incorrectas. Intenta de nuevo.')
+    } catch (err) {
+      // Manejar errores del backend
+      if (err.message.includes('401')) {
+        setError('Credenciales incorrectas.')
+      } else if (err.message.includes('400')) {
+        setError('Datos inválidos.')
+      } else {
+        setError(err.message || 'Error en login. Intenta de nuevo.')
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -80,8 +104,8 @@ function Login() {
             </div>
           </div>
 
-          <button className="login__btn" type="submit">
-            Iniciar sesión
+          <button className="login__btn" type="submit" disabled={loading}>
+            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
           </button>
 
           <p className="login__link">
