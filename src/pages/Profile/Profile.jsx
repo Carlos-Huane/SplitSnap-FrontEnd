@@ -2,6 +2,9 @@ import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Profile.css";
 import { useApp } from "../../context/AppContext";
+import { getProfile, updateProfile, uploadAvatar } from "../../api/userService";
+import { buyCredits as buyCreditAPI, getCredits as getCreditsAPI } from "../../api/creditsService";
+import { clearToken } from "../../api/authService";
 import {
   settingsMenu,
   privacyOptions,
@@ -54,17 +57,40 @@ function Profile() {
   const [editForm, setEditForm] = useState({
     name: currentUser?.name || '',
     email: currentUser?.email || '',
+    phone: currentUser?.phone || '',
     currentPassword: "",
     newPassword: "",
   });
+  const [profileData, setProfileData] = useState(null);
+  const [creditsData, setCreditsData] = useState(null);
   const [customAmount, setCustomAmount] = useState('');
   const [toast, setToast] = useState('');
+  const [loading, setLoading] = useState(false);
 
+  // Cargar perfil desde API al montar
   useEffect(() => {
-    if (currentUser) {
-      setEditForm(prev => ({ ...prev, name: currentUser.name, email: currentUser.email }));
-    }
-  }, [currentUser?.id]);
+    const loadProfileAndCredits = async () => {
+      try {
+        setLoading(true);
+        const profile = await getProfile();
+        setProfileData(profile);
+        setEditForm(prev => ({
+          ...prev,
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+        }));
+
+        const credits = await getCreditsAPI();
+        setCreditsData(credits);
+      } catch (err) {
+        showToast(err.message || 'Error cargando datos del perfil');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProfileAndCredits();
+  }, []);
 
   const stats = useMemo(() => {
     const pendingTotal = debts
@@ -80,14 +106,14 @@ function Profile() {
   }, [groups, debts, credits]);
 
   if (!currentUser) return null;
-  const user = currentUser;
+  const user = profileData || currentUser;
 
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
   };
 
-  const handleAvatarChange = (e) => {
+  const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -98,12 +124,19 @@ function Profile() {
       showToast('La imagen no debe superar 2 MB.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      dispatch({ type: 'SET_AVATAR', avatar: ev.target.result });
+
+    try {
+      setLoading(true);
+      const result = await uploadAvatar(file);
+      // Actualizar perfil local con la nueva URL
+      setProfileData(prev => ({ ...prev, avatarUrl: result.avatarUrl }));
+      dispatch({ type: 'SET_AVATAR', avatar: result.avatarUrl });
       showToast('Foto actualizada ✓');
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      showToast(err.message || 'Error subiendo foto');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRemoveAvatar = () => {
@@ -116,9 +149,10 @@ function Profile() {
     setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const saveProfileChanges = () => {
+  const saveProfileChanges = async () => {
     const newName = editForm.name.trim().replace(/\s+/g, ' ');
     const newEmail = editForm.email.trim().toLowerCase();
+    const newPhone = editForm.phone.trim();
 
     if (newName.length < 3) {
       showToast('Ingresa un nombre válido.');
@@ -128,9 +162,13 @@ function Profile() {
       showToast('Correo electrónico inválido.');
       return;
     }
+    if (newPhone && !/^\+?\d{7,15}$/.test(newPhone)) {
+      showToast('Teléfono inválido.');
+      return;
+    }
     if (editForm.newPassword) {
-      if (editForm.currentPassword !== user.password) {
-        showToast('La contraseña actual es incorrecta.');
+      if (!editForm.currentPassword) {
+        showToast('Debes ingresar tu contraseña actual para cambiarla.');
         return;
       }
       if (editForm.newPassword.length < 6) {
@@ -139,21 +177,50 @@ function Profile() {
       }
     }
 
-    const changes = { name: newName, email: newEmail };
-    if (editForm.newPassword) changes.password = editForm.newPassword;
-
-    dispatch({ type: 'UPDATE_PROFILE', changes });
-    setEditForm(prev => ({ ...prev, currentPassword: '', newPassword: '' }));
-    showToast('Cambios guardados con éxito ✓');
+    try {
+      setLoading(true);
+      const payload = {
+        name: newName,
+        email: newEmail,
+        phone: newPhone,
+        currentPassword: editForm.currentPassword || undefined,
+        newPassword: editForm.newPassword || undefined,
+      };
+      const updated = await updateProfile(payload);
+      setProfileData(updated);
+      dispatch({ type: 'UPDATE_PROFILE', userId: updated.id, changes: { name: updated.name, email: updated.email } });
+      setEditForm(prev => ({ ...prev, currentPassword: '', newPassword: '' }));
+      showToast('Cambios guardados con éxito ✓');
+    } catch (err) {
+      if (err.message.includes('409')) {
+        showToast('El email ya está en uso.');
+      } else {
+        showToast(err.message || 'Error guardando cambios');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const buyCredits = (amount) => {
+  const buyCredits = async (amount) => {
     if (amount <= 0) {
       showToast('Ingresa una cantidad válida.');
       return;
     }
-    dispatch({ type: 'BUY_CREDITS', amount });
-    showToast(`+${amount} créditos comprados ✓`);
+
+    try {
+      setLoading(true);
+      const result = await buyCreditAPI(amount);
+      // Actualizar créditos locales desde la API
+      const updated = await getCreditsAPI();
+      setCreditsData(updated);
+      dispatch({ type: 'BUY_CREDITS', amount });
+      showToast(`+${amount} créditos comprados ✓`);
+    } catch (err) {
+      showToast(err.message || 'Error comprando créditos');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCustomBuy = () => {
@@ -183,6 +250,7 @@ function Profile() {
     setActiveAccordion(activeAccordion === id ? null : id);
 
   const handleLogout = () => {
+    clearToken();
     dispatch({ type: 'LOGOUT' });
     navigate('/login', { replace: true });
   };
@@ -192,8 +260,8 @@ function Profile() {
 
   const renderAvatarVisual = (size = 'large') => (
     <div className={`avatar-circle${size === 'small' ? ' small' : ''}`}>
-      {profileAvatar
-        ? <img src={profileAvatar} alt={user.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+      {profileData?.avatarUrl || profileAvatar
+        ? <img src={profileData?.avatarUrl || profileAvatar} alt={user.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
         : getInitials()}
     </div>
   );
@@ -266,21 +334,22 @@ function Profile() {
               className="profile-input"
             />
 
-            <button className="save-changes-btn" onClick={saveProfileChanges}>
-              Guardar Cambios
+            <button className="save-changes-btn" onClick={saveProfileChanges} disabled={loading}>
+              {loading ? 'Guardando...' : 'Guardar Cambios'}
             </button>
           </div>
         );
 
       case "sm2": {
-        const recentTx = creditTransactions.slice(0, 5);
+        const recentTx = creditsData?.transactions || [];
+        const creditBalance = creditsData?.balance || credits;
         return (
           <div className="payment-methods-container">
             <div className="credits-balance-card">
               <div>
                 <p className="credits-balance-label">Saldo disponible</p>
-                <p className="credits-balance-amount">{credits.toFixed(2)} créditos</p>
-                <p className="credits-balance-sub">≈ S/ {credits.toFixed(2)} (1 crédito = S/ 1)</p>
+                <p className="credits-balance-amount">{creditBalance.toFixed(2)} créditos</p>
+                <p className="credits-balance-sub">≈ S/ {creditBalance.toFixed(2)} (1 crédito = S/ 1)</p>
               </div>
               <div className="credits-balance-icon">💰</div>
             </div>
@@ -292,6 +361,7 @@ function Profile() {
                   key={pkg.id}
                   className="credits-package-btn"
                   onClick={() => buyCredits(pkg.credits)}
+                  disabled={loading}
                 >
                   <span className="credits-package-amount">+{pkg.credits}</span>
                   <span className="credits-package-price">S/ {pkg.credits}</span>
@@ -307,9 +377,10 @@ function Profile() {
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
                 className="profile-input"
+                disabled={loading}
               />
-              <button className="add-card-btn" onClick={handleCustomBuy}>
-                Comprar
+              <button className="add-card-btn" onClick={handleCustomBuy} disabled={loading}>
+                {loading ? 'Comprando...' : 'Comprar'}
               </button>
             </div>
 
