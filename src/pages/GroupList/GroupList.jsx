@@ -60,6 +60,7 @@ function GroupList() {
           <div className="group-list__grid">
             {sortedGroups.map(group => {
               const total = getGroupTotal(group.id)
+              const formattedTotal = total.toFixed(2)
               const memberCount = group.memberIds.length
               return (
                 <div
@@ -78,7 +79,7 @@ function GroupList() {
                     <p className="group-card__members">{memberCount} miembro{memberCount !== 1 ? 's' : ''}</p>
                   </div>
                   <span className="group-card__total">
-                    S/ {total.toLocaleString('es-PE', { minimumFractionDigits: 0 })}
+                    S/ {formattedTotal}
                   </span>
                 </div>
               )
