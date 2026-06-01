@@ -78,6 +78,9 @@ function GroupDetail() {
         <h1 className="group-detail__title">
           <span>{group.emoji}</span> {group.name}
         </h1>
+        <p className="group-detail__members-count">
+          {members.length} miembro{members.length !== 1 ? 's' : ''}
+        </p>
         <button
           className="group-detail__invite"
           onClick={() => navigate(`/groups/${id}/invite`)}

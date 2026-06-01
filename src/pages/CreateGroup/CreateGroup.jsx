@@ -16,6 +16,7 @@ function CreateGroup() {
   const [name, setName] = useState('')
   const [selectedType, setSelectedType] = useState(null)
   const [selectedEmoji, setSelectedEmoji] = useState(null)
+  const maxNameLength = 50
 
   const handleContinue = () => {
     if (!name.trim()) return
@@ -47,8 +48,12 @@ function CreateGroup() {
             type="text"
             placeholder="Ej. Viaje a Barcelona"
             value={name}
+            maxLength={maxNameLength}
             onChange={(e) => setName(e.target.value)}
           />
+          <p className="create-group__counter">
+            {name.length}/{maxNameLength}
+          </p>
         </div>
 
         <div className="create-group__field">

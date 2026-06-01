@@ -10,11 +10,17 @@ function GroupList() {
     expenses
       .filter(e => e.groupId === groupId)
       .reduce((sum, e) => sum + e.amount, 0)
+  const sortedGroups = [...groups].sort((a, b) =>
+    a.name.localeCompare(b.name, 'es')
+  )
 
   return (
     <div className="group-list">
       <div className="group-list__header">
         <h1 className="group-list__title">Mis grupos</h1>
+        <p className="group-list__subtitle">
+          {groups.length} grupo{groups.length !== 1 ? 's' : ''}
+        </p>
         <button
           className="group-list__new-btn"
           onClick={() => navigate('/groups/new')}
@@ -52,8 +58,9 @@ function GroupList() {
       ) : (
         <>
           <div className="group-list__grid">
-            {groups.map(group => {
+            {sortedGroups.map(group => {
               const total = getGroupTotal(group.id)
+              const formattedTotal = total.toFixed(2)
               const memberCount = group.memberIds.length
               return (
                 <div
@@ -63,11 +70,16 @@ function GroupList() {
                 >
                   <div className="group-card__icon">{group.emoji}</div>
                   <div className="group-card__info">
-                    <h3 className="group-card__name">{group.name}</h3>
+                    <h3
+                      className="group-card__name"
+                      title={group.name}
+                    >
+                      {group.name}
+                    </h3>
                     <p className="group-card__members">{memberCount} miembro{memberCount !== 1 ? 's' : ''}</p>
                   </div>
                   <span className="group-card__total">
-                    S/ {total.toLocaleString('es-PE', { minimumFractionDigits: 0 })}
+                    S/ {formattedTotal}
                   </span>
                 </div>
               )
