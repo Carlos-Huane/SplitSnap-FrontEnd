@@ -69,7 +69,12 @@ function GroupList() {
                 >
                   <div className="group-card__icon">{group.emoji}</div>
                   <div className="group-card__info">
-                    <h3 className="group-card__name">{group.name}</h3>
+                    <h3
+                      className="group-card__name"
+                      title={group.name}
+                    >
+                      {group.name}
+                    </h3>
                     <p className="group-card__members">{memberCount} miembro{memberCount !== 1 ? 's' : ''}</p>
                   </div>
                   <span className="group-card__total">
