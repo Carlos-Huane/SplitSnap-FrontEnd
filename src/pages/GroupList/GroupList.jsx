@@ -10,6 +10,9 @@ function GroupList() {
     expenses
       .filter(e => e.groupId === groupId)
       .reduce((sum, e) => sum + e.amount, 0)
+  const sortedGroups = [...groups].sort((a, b) =>
+    a.name.localeCompare(b.name, 'es')
+  )
 
   return (
     <div className="group-list">
@@ -55,7 +58,7 @@ function GroupList() {
       ) : (
         <>
           <div className="group-list__grid">
-            {groups.map(group => {
+            {sortedGroups.map(group => {
               const total = getGroupTotal(group.id)
               const memberCount = group.memberIds.length
               return (
