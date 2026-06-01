@@ -65,6 +65,27 @@ export const markDebtAsPaid = async (groupId, debtId, paidWith) => {
   return response.json();
 };
 
+/**
+ * Pagar deuda con créditos del sistema
+ * @param {string} groupId - ID del grupo
+ * @param {string} debtId - ID de la deuda
+ * @returns {Promise<Object>}
+ */
 export const payDebtWithCredits = async (groupId, debtId) => {
-  // Se implementará en HU-F5.3
-}
+  const response = await fetch(`${API_URL}/groups/${groupId}/debts/${debtId}/pay-credits`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    // No necesita body según tu endpoint
+  });
+
+  if (!response.ok) {
+    if (response.status === 400) throw new Error('400_INSUFFICIENT_CREDITS');
+    if (response.status === 403) throw new Error('403');
+    if (response.status === 409) throw new Error('409');
+    
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Error al pagar con créditos');
+  }
+
+  return response.json();
+};

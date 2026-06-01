@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useApp } from '../../context/AppContext' // ¡Faltaba importar el context!
-import { getDebts, markDebtAsPaid } from '../../api/debtsService'; // Importamos la nueva función
-import MarkAsPaidModal from './MarkAsPaidModal'; // Importamos el modal
+import { useApp } from '../../context/AppContext'
+import { getDebts, markDebtAsPaid, payDebtWithCredits } from '../../api/debtsService'
+import MarkAsPaidModal from './MarkAsPaidModal'
+import PayWithCreditsModal from './PayWithCreditsModal'
 import './DebtSummary.css'
 
 function DebtSummary() {
@@ -16,20 +17,24 @@ function DebtSummary() {
   const groupTotal = groupExpenses.reduce((sum, e) => sum + e.amount, 0)
   const memberCount = group?.memberIds.length || 0
 
-  // --- ESTADOS LOCALES ---
+  // --- ESTADOS LOCALES GENERALES ---
   const [debts, setDebts] = useState([])
   const [statusTab, setStatusTab] = useState('PENDING') 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [toast, setToast] = useState('')
 
-  // --- ESTADOS PARA EL MODAL DE PAGO (HU-F5.2) ---
+  // --- ESTADOS PARA EL MODAL DE PAGO MANUAL (HU-F5.2) ---
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedDebtId, setSelectedDebtId] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // --- ESTADOS PARA EL MODAL DE CRÉDITOS (HU-F5.3) ---
+  const [isCreditModalOpen, setIsCreditModalOpen] = useState(false)
+  const [debtToPay, setDebtToPay] = useState(null)
+  const [isSubmittingCredit, setIsSubmittingCredit] = useState(false)
+
   // --- EFECTO: LLAMADA A LA API ---
-  // Usamos useCallback para poder llamar a fetchDebts después de un pago exitoso
   const fetchDebts = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -78,7 +83,7 @@ function DebtSummary() {
       await markDebtAsPaid(groupId, selectedDebtId, paidWith)
       showToast('✓ Deuda marcada como pagada')
       setIsModalOpen(false)
-      fetchDebts() // Refresca la lista desde el backend
+      fetchDebts() 
     } catch (err) {
       if (err.message === '403') {
         alert('Solo el deudor puede marcar esta deuda como pagada.')
@@ -94,13 +99,39 @@ function DebtSummary() {
     }
   }
 
-  // Placeholder para HU-F5.3
-  const payWithCredits = (debt) => {
-    if (credits < debt.amount) {
-      showToast(`Créditos insuficientes. Te faltan S/ ${(debt.amount - credits).toFixed(2)}.`)
-      return
+  // --- LÓGICA DE PAGO CON CRÉDITOS (HU-F5.3) ---
+  const handleOpenCreditModal = (debt) => {
+    setDebtToPay(debt)
+    setIsCreditModalOpen(true)
+  }
+
+  const handleConfirmPayCredits = async (debtId) => {
+    setIsSubmittingCredit(true)
+    try {
+      await payDebtWithCredits(groupId, debtId)
+      showToast('✓ Pago de deuda exitoso usando créditos')
+      
+      // Sincroniza el estado global de la app para descontar los créditos localmente
+      dispatch({ type: 'SPEND_CREDITS', amount: debtToPay.amount })
+      
+      setIsCreditModalOpen(false)
+      fetchDebts() 
+    } catch (err) {
+      if (err.message === '400_INSUFFICIENT_CREDITS') {
+        alert('No tienes suficientes créditos. Serás redirigido a tu perfil para comprar.')
+        navigate('/profile')
+      } else if (err.message === '403') {
+        alert('Solo el deudor puede pagar esta deuda.')
+      } else if (err.message === '409') {
+        alert('Esta deuda ya estaba pagada.')
+        setIsCreditModalOpen(false)
+        fetchDebts() 
+      } else {
+        alert(err.message)
+      }
+    } finally {
+      setIsSubmittingCredit(false)
     }
-    // Lógica futura...
   }
 
   // Visuales
@@ -128,7 +159,7 @@ function DebtSummary() {
   // --- COMPONENTE DE TARJETA ---
   const DebtCard = ({ debt }) => {
     const isPaid = statusTab === 'PAID'
-    const isDebtor = debt.fromUserId === currentUser.id // Verificamos si es el deudor
+    const isDebtor = debt.fromUserId === currentUser.id
 
     return (
       <div className={`debt-card ${isPaid ? 'debt-card--paid' : ''}`}>
@@ -164,15 +195,13 @@ function DebtSummary() {
               {isDebtor && (
                 <button
                   className="debt-card__pay-btn debt-card__pay-btn--credits"
-                  onClick={() => payWithCredits(debt)}
-                  disabled={credits < debt.amount}
+                  onClick={() => handleOpenCreditModal(debt)}
                 >
                   💰 Pagar con créditos · S/{debt.amount.toFixed(2)}
                 </button>
               )}
             </div>
             
-            {/* Solo mostramos el botón si el usuario actual es quien debe */}
             {isDebtor ? (
               <>
                 <p className="debt-card__credits-hint">
@@ -302,12 +331,22 @@ function DebtSummary() {
         </div>
       )}
 
-      {/* Renderizamos el modal aquí abajo */}
+      {/* Modal para marcar como pagado manualmente (HU-F5.2) */}
       <MarkAsPaidModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleConfirmMarkPaid}
         isSubmitting={isSubmitting}
+      />
+
+      {/* Modal para pagar con créditos del sistema (HU-F5.3) */}
+      <PayWithCreditsModal 
+        isOpen={isCreditModalOpen}
+        onClose={() => setIsCreditModalOpen(false)}
+        onConfirm={handleConfirmPayCredits}
+        isSubmitting={isSubmittingCredit}
+        debt={debtToPay}
+        currentCredits={credits}
       />
     </div>
   )
