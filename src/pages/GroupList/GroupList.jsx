@@ -15,6 +15,9 @@ function GroupList() {
     <div className="group-list">
       <div className="group-list__header">
         <h1 className="group-list__title">Mis grupos</h1>
+        <p className="group-list__subtitle">
+          {groups.length} grupo{groups.length !== 1 ? 's' : ''}
+        </p>
         <button
           className="group-list__new-btn"
           onClick={() => navigate('/groups/new')}
