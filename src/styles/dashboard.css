@@ -55,6 +55,14 @@
   margin-bottom: 25px;
 }
 
+.balance-card.positive-card {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.balance-card.negative-card {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
 .balance-label {
   font-size: 14px;
   opacity: 0.9;

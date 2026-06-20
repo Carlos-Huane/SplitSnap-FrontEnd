@@ -4,6 +4,8 @@ import "./Profile.css";
 import { useApp } from "../../context/AppContext";
 import { getMe, updateMe, uploadAvatar } from "../../services/users.service";
 import { buyCredits as buyCreditAPI, getCredits as getCreditsAPI } from "../../services/credits.service";
+import { getMyGroups } from "../../services/groups.service";
+import { getDebts } from "../../services/debts.service";
 import { extractErrorMessage, resolveAssetUrl } from "../../services/api";
 import {
   settingsMenu,
@@ -50,7 +52,7 @@ const CREDIT_PACKAGES = [
 
 function Profile() {
   const navigate = useNavigate();
-  const { groups, expenses, debts, currentUser, credits, profileAvatar, creditTransactions, dispatch } = useApp();
+  const { currentUser, credits, profileAvatar, dispatch } = useApp();
   const fileInputRef = useRef(null);
 
   const [activeAccordion, setActiveAccordion] = useState(null);
@@ -63,6 +65,8 @@ function Profile() {
   });
   const [profileData, setProfileData] = useState(null);
   const [creditsData, setCreditsData] = useState(null);
+  const [groupsData, setGroupsData] = useState([]);
+  const [debtsDataList, setDebtsDataList] = useState([]);
   const [customAmount, setCustomAmount] = useState('');
   const [toast, setToast] = useState('');
   const [loading, setLoading] = useState(false);
@@ -83,6 +87,13 @@ function Profile() {
 
         const creditsResp = await getCreditsAPI();
         setCreditsData(creditsResp);
+
+        const groupsResp = await getMyGroups();
+        setGroupsData(groupsResp || []);
+
+        const debtsPromises = (groupsResp || []).map(g => getDebts(g.id, 'PENDING').catch(() => []));
+        const debtsResults = await Promise.all(debtsPromises);
+        setDebtsDataList(debtsResults.flat());
       } catch (err) {
         showToast(extractErrorMessage(err, 'Error cargando datos del perfil'));
       } finally {
@@ -92,22 +103,26 @@ function Profile() {
     loadProfileAndCredits();
   }, []);
 
+  if (!currentUser) return null;
+  const user = profileData || currentUser;
+
   const stats = useMemo(() => {
-    const pendingTotal = debts
-      .filter(d => d.status !== 'paid')
+    const pendingTotal = debtsDataList
+      .filter(d => {
+        const fromId = d.fromUser?.id ?? d.fromUserId;
+        const status = (d.status || '').toLowerCase();
+        return status !== 'paid' && fromId === user.id;
+      })
       .reduce((s, d) => s + d.amount, 0);
     const fmtMoney = (n) => Number.isInteger(n) ? n.toString() : n.toFixed(2);
     const creditBalance = creditsData?.balance ?? credits ?? 0;
 
     return [
-      { id: 'ps1', label: 'Grupos activos', value: groups.length },
+      { id: 'ps1', label: 'Grupos activos', value: groupsData.length },
       { id: 'ps2', label: 'Por saldar', value: fmtMoney(pendingTotal), isCurrency: true },
       { id: 'ps3', label: 'Créditos', value: fmtMoney(creditBalance), isCurrency: true },
     ];
-  }, [groups, debts, credits, creditsData]);
-
-  if (!currentUser) return null;
-  const user = profileData || currentUser;
+  }, [groupsData, debtsDataList, credits, creditsData, user.id]);
 
   const showToast = (msg) => {
     setToast(msg);
