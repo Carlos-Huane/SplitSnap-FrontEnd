@@ -349,8 +349,7 @@
     padding: var(--spacing-xl) var(--spacing-md);
   }
 
-  .user-card .edit-btn, 
-  .user-card .stats-row {
+  .user-card .edit-btn {
     display: none; 
   }
 
