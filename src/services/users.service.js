@@ -31,6 +31,11 @@ export async function uploadAvatar(file) {
   return data
 }
 
+export async function deleteAvatar() {
+  const { data } = await api.delete('/api/users/me/avatar')
+  return data
+}
+
 export async function search(query) {
   const { data } = await api.get('/api/users/search', { params: { q: query } })
   return data

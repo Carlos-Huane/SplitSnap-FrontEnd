@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Profile.css";
 import { useApp } from "../../context/AppContext";
-import { getMe, updateMe, uploadAvatar } from "../../services/users.service";
+import { getMe, updateMe, uploadAvatar, deleteAvatar } from "../../services/users.service";
 import { buyCredits as buyCreditAPI, getCredits as getCreditsAPI } from "../../services/credits.service";
 import { getMyGroups } from "../../services/groups.service";
 import { getDebts } from "../../services/debts.service";
@@ -155,9 +155,18 @@ function Profile() {
     }
   };
 
-  const handleRemoveAvatar = () => {
-    dispatch({ type: 'SET_AVATAR', avatar: null });
-    showToast('Foto eliminada');
+  const handleRemoveAvatar = async () => {
+    try {
+      setLoading(true);
+      await deleteAvatar();
+      setProfileData(prev => ({ ...prev, avatarUrl: null }));
+      dispatch({ type: 'SET_AVATAR', avatar: null });
+      showToast('Foto eliminada ✓');
+    } catch (err) {
+      showToast(extractErrorMessage(err, 'Error eliminando foto'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (e) => {
