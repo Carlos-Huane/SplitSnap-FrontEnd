@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMyGroups } from '../../services/groups.service'
+import { getDebts } from '../../services/debts.service'
+import { useApp } from '../../context/AppContext'
 import { extractErrorMessage } from '../../services/api'
 import './GroupList.css'
 
 function GroupList() {
   const navigate = useNavigate()
+  const { currentUser } = useApp()
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -14,12 +17,34 @@ function GroupList() {
     let cancelled = false
     setLoading(true)
     getMyGroups()
-      .then((data) => {
+      .then(async (data) => {
         if (cancelled) return
         const sorted = [...data].sort((a, b) =>
           (a.name || '').localeCompare(b.name || '', 'es')
         )
-        setGroups(sorted)
+
+        // Calculate myBalance dynamically from pending debts
+        const myId = currentUser?.id
+        const groupsWithBalance = await Promise.all(sorted.map(async (group) => {
+          try {
+            const debtsList = await getDebts(group.id, 'PENDING')
+            let balance = 0
+            debtsList.forEach(d => {
+              const status = (d.status || '').toLowerCase()
+              if (status !== 'pending') return
+              const fromId = d.fromUser?.id ?? d.fromUserId
+              const toId = d.toUser?.id ?? d.toUserId
+              if (toId === myId) balance += d.amount
+              if (fromId === myId) balance -= d.amount
+            })
+            return { ...group, myBalance: balance }
+          } catch {
+            return { ...group, myBalance: 0 }
+          }
+        }))
+
+        if (cancelled) return
+        setGroups(groupsWithBalance)
         setError(null)
       })
       .catch((err) => {
@@ -28,7 +53,7 @@ function GroupList() {
       })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [currentUser?.id])
 
   const getMemberCount = (g) =>
     g.memberCount ?? g.members?.length ?? g.memberIds?.length ?? 0
@@ -103,9 +128,23 @@ function GroupList() {
                     </h3>
                     <p className="group-card__members">{memberCount} miembro{memberCount !== 1 ? 's' : ''}</p>
                   </div>
-                  <span className="group-card__total">
+                  <span
+                    className="group-card__total"
+                    style={{
+                      color:
+                        group.myBalance > 0
+                          ? 'var(--color-success)'
+                          : group.myBalance < 0
+                          ? 'var(--color-danger)'
+                          : 'var(--color-text-secondary)',
+                    }}
+                  >
                     {typeof group.myBalance === 'number'
-                      ? `S/ ${group.myBalance.toFixed(2)}`
+                      ? (group.myBalance > 0
+                          ? `+S/ ${group.myBalance.toFixed(2)}`
+                          : group.myBalance < 0
+                          ? `-S/ ${Math.abs(group.myBalance).toFixed(2)}`
+                          : 'S/ 0.00')
                       : ''}
                   </span>
                 </div>

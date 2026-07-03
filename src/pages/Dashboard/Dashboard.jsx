@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import { getMyGroups } from '../../services/groups.service'
+import { getDebts } from '../../services/debts.service'
 import { getMe } from '../../services/users.service'
 import { extractErrorMessage, resolveAssetUrl } from '../../services/api'
 import '../../styles/dashboard.css'
@@ -27,9 +28,31 @@ function Dashboard() {
     let cancelled = false
     setLoading(true)
     Promise.all([getMyGroups(), getMe().catch(() => null)])
-      .then(([gs, me]) => {
+      .then(async ([gs, me]) => {
         if (cancelled) return
-        setGroups(gs || [])
+
+        // Fetch debts for each group to compute myBalance dynamically
+        const myId = me?.id || currentUser?.id
+        const groupsWithBalance = await Promise.all((gs || []).map(async (g) => {
+          try {
+            const debtsList = await getDebts(g.id, 'PENDING')
+            let balance = 0
+            debtsList.forEach(d => {
+              const status = (d.status || '').toLowerCase()
+              if (status !== 'pending') return
+              const fromId = d.fromUser?.id ?? d.fromUserId
+              const toId = d.toUser?.id ?? d.toUserId
+              if (toId === myId) balance += d.amount
+              if (fromId === myId) balance -= d.amount
+            })
+            return { ...g, myBalance: balance }
+          } catch {
+            return { ...g, myBalance: 0 }
+          }
+        }))
+
+        if (cancelled) return
+        setGroups(groupsWithBalance)
         if (me) setProfile(me)
         setError(null)
       })
@@ -39,21 +62,21 @@ function Dashboard() {
       })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [currentUser?.id])
 
   const userName = profile?.name || currentUser?.name || ''
   const firstName = userName.split(' ')[0] || 'Usuario'
   const avatarSrc = resolveAssetUrl(profile?.avatarUrl || profileAvatar)
 
-  // myBalance/recentActivity son gaps conocidos del backend (no vienen en /api/groups)
-  // Mostramos placeholders hasta que el backend los agregue.
-  const pendingTotal = useMemo(() => {
+  const netBalance = useMemo(() => {
     return groups.reduce((sum, g) => sum + (Number(g.myBalance) || 0), 0)
   }, [groups])
 
-  const balanceLabel = pendingTotal > 0
-    ? 'Total por saldar en tus grupos'
-    : 'Estás al día'
+  const balanceLabel = netBalance > 0
+    ? 'Te deben en total'
+    : netBalance < 0
+      ? 'Debes en total'
+      : 'Estás al día'
 
   return (
     <div className="dashboard">
@@ -73,10 +96,12 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="balance-card">
-        <p className="balance-label">Por saldar</p>
+      <div className={`balance-card ${netBalance > 0 ? 'positive-card' : netBalance < 0 ? 'negative-card' : ''}`}>
+        <p className="balance-label">
+          {netBalance > 0 ? 'Te deben' : netBalance < 0 ? 'Por saldar (Debes)' : 'Por saldar'}
+        </p>
         <h1 className="balance-amount">
-          S/ {pendingTotal.toFixed(2)}
+          S/ {Math.abs(netBalance).toFixed(2)}
         </h1>
         <span className="balance-sub">{balanceLabel}</span>
       </div>

@@ -86,9 +86,15 @@ function AddExpense() {
 
     let splitBetween
     if (splitMode === 'equal') {
-      splitBetween = members.map(m => ({
+      // Distribuye centavos de forma exacta para que la suma cuadre con el
+      // total. Ej: 99.50 / 3 -> [33.17, 33.17, 33.16] suman 99.50, no 99.51.
+      const totalCents = Math.round(totalAmount * 100)
+      const n = members.length
+      const baseCents = Math.floor(totalCents / n)
+      const remainder = totalCents - baseCents * n
+      splitBetween = members.map((m, idx) => ({
         userId: m.id,
-        amount: parseFloat((totalAmount / members.length).toFixed(2)),
+        amount: (baseCents + (idx < remainder ? 1 : 0)) / 100,
       }))
     } else {
       splitBetween = members.map(m => ({

@@ -72,17 +72,23 @@ function ReviewItems() {
   }, [amount])
 
   // Auto-split equitativo cuando cambian monto o miembros seleccionados
+  // Auto-split equitativo. Distribuye centavos de forma exacta: si el total
+  // no es divisible parejo, los primeros (remainder) miembros reciben un
+  // centavo extra. Ej: 99.50 / 3 -> [33.17, 33.17, 33.16] suman 99.50.
   useEffect(() => {
     if (selectedMembers.length === 0 || amountNumber <= 0) {
       setSplits({})
       return
     }
-    const equal = amountNumber / selectedMembers.length
-    const fixed = parseFloat(equal.toFixed(2))
+    const totalCents = Math.round(amountNumber * 100)
+    const n = selectedMembers.length
+    const baseCents = Math.floor(totalCents / n)
+    const remainder = totalCents - baseCents * n
     setSplits((prev) => {
       const next = {}
-      selectedMembers.forEach((uid) => {
-        next[uid] = prev[uid] !== undefined ? prev[uid] : fixed
+      selectedMembers.forEach((uid, idx) => {
+        const cents = baseCents + (idx < remainder ? 1 : 0)
+        next[uid] = prev[uid] !== undefined ? prev[uid] : cents / 100
       })
       return next
     })
