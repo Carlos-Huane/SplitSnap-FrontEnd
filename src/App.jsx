@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { AppProvider } from './context/AppContext'
 import { SidebarProvider, useSidebar } from './context/SidebarContext'
 import Sidebar from './components/shared/Sidebar'
@@ -29,18 +29,24 @@ function SidebarOverlay() {
   return <div className="app-overlay" onClick={closeSidebar} />
 }
 
-function MenuToggle() {
-  const { isOpen, toggleSidebar } = useSidebar()
-  if (isOpen) return null
+function MobileHeader() {
+  const navigate = useNavigate()
+  const { toggleSidebar } = useSidebar()
   return (
-    <button
-      type="button"
-      className="app-menu-toggle"
-      onClick={toggleSidebar}
-      aria-label="Abrir menú"
-    >
-      ☰
-    </button>
+    <header className="app-mobile-header">
+      <div className="app-mobile-logo" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
+        <div className="app-mobile-logo-icon">S</div>
+        <span className="app-mobile-logo-text">SplitSnap</span>
+      </div>
+      <button
+        type="button"
+        className="app-mobile-menu-toggle"
+        onClick={toggleSidebar}
+        aria-label="Abrir menú"
+      >
+        ☰
+      </button>
+    </header>
   )
 }
 
@@ -53,9 +59,9 @@ function AppRoutes() {
   return (
     <div className="app-layout">
       {showSidebar && <Sidebar />}
-      {showSidebar && <MenuToggle />}
       <SidebarOverlay />
       <main className="app-content">
+        {showSidebar && <MobileHeader />}
         <Routes>
           <Route path="/" element={<Splash />} />
           <Route path="/login" element={<Login />} />
