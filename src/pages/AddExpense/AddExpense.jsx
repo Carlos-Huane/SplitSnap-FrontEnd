@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext'
 import { createExpense } from '../../services/expenses.service'
 import { getGroup } from '../../services/groups.service'
 import { getCurrentUserFromToken } from '../../services/auth.service'
-import { extractErrorMessage } from '../../services/api'
+import { extractErrorMessage, resolveAssetUrl } from '../../services/api'
 import './AddExpense.css'
 
 const avatarColors = ['#F97316', '#3B82F6', '#22C55E', '#8B5CF6', '#EF4444']
@@ -223,9 +223,20 @@ function AddExpense() {
                 >
                   <span
                     className="add-expense__member-initial"
-                    style={{ background: active ? 'rgba(255,255,255,0.3)' : avatarColors[idx % avatarColors.length] }}
+                    style={{
+                      background: member.avatarUrl ? 'transparent' : (active ? 'rgba(255,255,255,0.3)' : avatarColors[idx % avatarColors.length]),
+                      overflow: 'hidden'
+                    }}
                   >
-                    {getInitial(member.name)}
+                    {member.avatarUrl ? (
+                      <img
+                        src={resolveAssetUrl(member.avatarUrl)}
+                        alt={member.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                      />
+                    ) : (
+                      getInitial(member.name)
+                    )}
                   </span>
                   {member.id === currentUserId ? 'Tú' : (member.name || 'Usuario')}
                 </button>

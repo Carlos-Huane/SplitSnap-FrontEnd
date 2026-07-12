@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext'
 import { getGroup } from '../../services/groups.service'
 import { getExpensesByGroup } from '../../services/expenses.service'
 import { getDebts } from '../../services/debts.service'
-import { extractErrorMessage } from '../../services/api'
+import { extractErrorMessage, resolveAssetUrl } from '../../services/api'
 import './GroupDetail.css'
 
 const avatarColors = ['#F97316', '#3B82F6', '#22C55E', '#8B5CF6', '#EF4444']
@@ -122,9 +122,20 @@ function GroupDetail() {
                   <div className="balance-row__user">
                     <div
                       className="balance-row__avatar"
-                      style={{ background: avatarColors[idx % avatarColors.length] }}
+                      style={{
+                        background: member.avatarUrl ? 'transparent' : avatarColors[idx % avatarColors.length],
+                        overflow: 'hidden'
+                      }}
                     >
-                      {getInitial(member.name)}
+                      {member.avatarUrl ? (
+                        <img
+                          src={resolveAssetUrl(member.avatarUrl)}
+                          alt={member.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                        />
+                      ) : (
+                        getInitial(member.name)
+                      )}
                     </div>
                     <div className="balance-row__name-wrap" style={{ display: 'flex', flexDirection: 'column' }}>
                       <span className="balance-row__name" style={{ fontWeight: 500 }}>
