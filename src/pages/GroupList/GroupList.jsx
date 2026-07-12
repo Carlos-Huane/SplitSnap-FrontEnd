@@ -84,7 +84,18 @@ function GroupList() {
       )}
 
       {loading ? (
-        <p style={{ textAlign: 'center', padding: '2rem' }}>Cargando grupos...</p>
+        <div className="group-list__grid">
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="group-card" style={{ pointerEvents: 'none', opacity: 0.7 }}>
+              <div className="group-card__icon skeleton" style={{ width: '48px', height: '48px', borderRadius: '12px' }} />
+              <div className="group-card__info" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div className="skeleton" style={{ width: '140px', height: '18px' }} />
+                <div className="skeleton" style={{ width: '80px', height: '12px' }} />
+              </div>
+              <div className="skeleton" style={{ width: '70px', height: '20px', marginLeft: 'auto' }} />
+            </div>
+          ))}
+        </div>
       ) : groups.length === 0 ? (
         <div className="group-list__empty">
           <div className="group-list__empty-icon">
@@ -149,7 +160,7 @@ function GroupList() {
                           : group.myBalance < 0
                           ? `-S/ ${Math.abs(group.myBalance).toFixed(2)}`
                           : 'S/ 0.00')
-                      : 'Cargando...'}
+                      : <span className="skeleton" style={{ width: '60px', height: '16px' }} />}
                   </span>
                 </div>
               )
