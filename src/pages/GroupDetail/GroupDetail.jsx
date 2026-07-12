@@ -126,9 +126,16 @@ function GroupDetail() {
                     >
                       {getInitial(member.name)}
                     </div>
-                    <span className="balance-row__name">
-                      {member.id === currentUser?.id ? 'Tú' : (member.name?.split(' ')[0] || 'Usuario')}
-                    </span>
+                    <div className="balance-row__name-wrap" style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span className="balance-row__name" style={{ fontWeight: 500 }}>
+                        {member.id === currentUser?.id ? 'Tú' : (member.name || 'Usuario')}
+                      </span>
+                      {member.id !== currentUser?.id && member.email && (
+                        <span className="balance-row__email" style={{ fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                          {member.email}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className={`balance-row__amount ${balance >= 0 ? 'positive' : 'negative'}`}>
                     {balance >= 0 ? '+' : '-'}S/ {Math.abs(balance).toFixed(2)}
@@ -157,7 +164,7 @@ function GroupDetail() {
                       <p className="expense-row__desc">{expense.description}</p>
                       <p className="expense-row__meta">
                         {paidByUser
-                          ? (paidByUser.id === currentUser?.id ? 'Tú' : paidByUser.name?.split(' ')[0])
+                          ? (paidByUser.id === currentUser?.id ? 'Tú' : paidByUser.name)
                           : 'Alguien'} · {expenseDate}
                       </p>
                     </div>

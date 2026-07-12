@@ -227,7 +227,7 @@ function AddExpense() {
                   >
                     {getInitial(member.name)}
                   </span>
-                  {member.id === currentUserId ? 'Tú' : (member.name?.split(' ')[0] || 'Usuario')}
+                  {member.id === currentUserId ? 'Tú' : (member.name || 'Usuario')}
                 </button>
               )
             })}

@@ -215,7 +215,7 @@ function ReviewItems() {
               >
                 {getInitial(m.name)}
               </span>
-              {m.id === tokenUser?.id ? 'Tú' : (m.name?.split(' ')[0] || 'Usuario')}
+              {m.id === tokenUser?.id ? 'Tú' : (m.name || 'Usuario')}
             </button>
           ))}
         </div>
@@ -275,7 +275,7 @@ function ReviewItems() {
                         {getInitial(m.name)}
                       </span>
                       <span className="split-row__name">
-                        {m.id === tokenUser?.id ? 'Tú' : (m.name?.split(' ')[0] || 'Usuario')}
+                        {m.id === tokenUser?.id ? 'Tú' : (m.name || 'Usuario')}
                       </span>
                     </label>
                     {checked && (
@@ -310,7 +310,7 @@ function ReviewItems() {
                 <div className="summary-row__dot" style={{ background: avatarColors[idx % avatarColors.length] }} />
                 <div className="summary-row__info">
                   <p className="summary-row__name">
-                    {member.id === tokenUser?.id ? 'Tú' : (member.name?.split(' ')[0] || 'Usuario')}
+                    {member.id === tokenUser?.id ? 'Tú' : (member.name || 'Usuario')}
                   </p>
                 </div>
                 <span className="summary-row__amount">
