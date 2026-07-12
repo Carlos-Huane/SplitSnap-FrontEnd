@@ -28,14 +28,20 @@ function Dashboard() {
     let cancelled = false
     setLoading(true)
     Promise.all([getMyGroups(), getMe().catch(() => null)])
-      .then(async ([gs, me]) => {
+      .then(([gs, me]) => {
         if (cancelled) return
 
-        // Fetch debts for each group to compute myBalance dynamically
+        const initialGroups = (gs || []).map(g => ({ ...g, myBalance: undefined }))
+        setGroups(initialGroups)
+        if (me) setProfile(me)
+        setError(null)
+        setLoading(false)
+
+        // Fetch group balances in background
         const myId = me?.id || currentUser?.id
-        const groupsWithBalance = await Promise.all((gs || []).map(async (g) => {
+        initialGroups.forEach(async (group) => {
           try {
-            const debtsList = await getDebts(g.id, 'PENDING')
+            const debtsList = await getDebts(group.id, 'PENDING')
             let balance = 0
             debtsList.forEach(d => {
               const status = (d.status || '').toLowerCase()
@@ -45,22 +51,21 @@ function Dashboard() {
               if (toId === myId) balance += d.amount
               if (fromId === myId) balance -= d.amount
             })
-            return { ...g, myBalance: balance }
+            if (!cancelled) {
+              setGroups(prev => prev.map(g => g.id === group.id ? { ...g, myBalance: balance } : g))
+            }
           } catch {
-            return { ...g, myBalance: 0 }
+            if (!cancelled) {
+              setGroups(prev => prev.map(g => g.id === group.id ? { ...g, myBalance: 0 } : g))
+            }
           }
-        }))
-
-        if (cancelled) return
-        setGroups(groupsWithBalance)
-        if (me) setProfile(me)
-        setError(null)
+        })
       })
       .catch((err) => {
         if (cancelled) return
         setError(extractErrorMessage(err, 'No pudimos cargar tu dashboard.'))
+        setLoading(false)
       })
-      .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [currentUser?.id])
 
@@ -96,15 +101,22 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className={`balance-card ${netBalance > 0 ? 'positive-card' : netBalance < 0 ? 'negative-card' : ''}`}>
-        <p className="balance-label">
-          {netBalance > 0 ? 'Te deben' : netBalance < 0 ? 'Por saldar (Debes)' : 'Por saldar'}
-        </p>
-        <h1 className="balance-amount">
-          S/ {Math.abs(netBalance).toFixed(2)}
-        </h1>
-        <span className="balance-sub">{balanceLabel}</span>
-      </div>
+      {(() => {
+        const isBalanceLoading = groups.length > 0 && groups.some(g => g.myBalance === undefined);
+        return (
+          <div className={`balance-card ${!isBalanceLoading && netBalance > 0 ? 'positive-card' : !isBalanceLoading && netBalance < 0 ? 'negative-card' : ''}`}>
+            <p className="balance-label">
+              {isBalanceLoading ? 'Calculando balance...' : (netBalance > 0 ? 'Te deben' : netBalance < 0 ? 'Por saldar (Debes)' : 'Por saldar')}
+            </p>
+            <h1 className="balance-amount">
+              {isBalanceLoading ? 'S/ ...' : `S/ ${Math.abs(netBalance).toFixed(2)}`}
+            </h1>
+            <span className="balance-sub">
+              {isBalanceLoading ? 'Cargando saldos...' : balanceLabel}
+            </span>
+          </div>
+        )
+      })()}
 
       {error && (
         <p style={{ color: '#ff4d4d', padding: '0 1rem' }}>⚠️ {error}</p>
