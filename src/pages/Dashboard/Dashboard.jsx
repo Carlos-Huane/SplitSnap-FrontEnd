@@ -106,13 +106,19 @@ function Dashboard() {
         return (
           <div className={`balance-card ${!isBalanceLoading && netBalance > 0 ? 'positive-card' : !isBalanceLoading && netBalance < 0 ? 'negative-card' : ''}`}>
             <p className="balance-label">
-              {isBalanceLoading ? 'Calculando balance...' : (netBalance > 0 ? 'Te deben' : netBalance < 0 ? 'Por saldar (Debes)' : 'Por saldar')}
+              {isBalanceLoading 
+                ? <span className="skeleton-light" style={{ width: '120px', height: '14px' }} />
+                : (netBalance > 0 ? 'Te deben' : netBalance < 0 ? 'Por saldar (Debes)' : 'Por saldar')}
             </p>
             <h1 className="balance-amount">
-              {isBalanceLoading ? 'S/ ...' : `S/ ${Math.abs(netBalance).toFixed(2)}`}
+              {isBalanceLoading 
+                ? <span className="skeleton-light" style={{ width: '160px', height: '36px', margin: '4px 0' }} />
+                : `S/ ${Math.abs(netBalance).toFixed(2)}`}
             </h1>
-            <span className="balance-sub">
-              {isBalanceLoading ? 'Cargando saldos...' : balanceLabel}
+            <span className="balance-sub" style={{ display: 'block', minHeight: '18px' }}>
+              {isBalanceLoading 
+                ? <span className="skeleton-light" style={{ width: '180px', height: '14px' }} />
+                : balanceLabel}
             </span>
           </div>
         )
@@ -131,7 +137,17 @@ function Dashboard() {
         </div>
 
         {loading ? (
-          <p style={{ padding: '1rem' }}>Cargando...</p>
+          <div className="activity-list">
+            {[1, 2].map((n) => (
+              <div key={n} className="activity-item" style={{ pointerEvents: 'none', opacity: 0.7 }}>
+                <div className="icon skeleton" style={{ width: '40px', height: '40px', borderRadius: '8px' }} />
+                <div className="info" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div className="skeleton" style={{ width: '120px', height: '16px' }} />
+                  <div className="skeleton" style={{ width: '80px', height: '12px' }} />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : groups.length === 0 ? (
           <div className="dashboard-empty">
             <span className="dashboard-empty__icon">👥</span>
