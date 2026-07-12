@@ -5,7 +5,7 @@ import { getDebts, markAsPaid, payWithCredits } from '../../services/debts.servi
 import { getGroup } from '../../services/groups.service'
 import { getExpensesByGroup } from '../../services/expenses.service'
 import { getCredits } from '../../services/credits.service'
-import { extractErrorMessage } from '../../services/api'
+import { extractErrorMessage, resolveAssetUrl } from '../../services/api'
 import MarkAsPaidModal from './MarkAsPaidModal'
 import PayWithCreditsModal from './PayWithCreditsModal'
 import './DebtSummary.css'
@@ -205,12 +205,40 @@ function DebtSummary() {
       <div className={`debt-card ${isPaid ? 'debt-card--paid' : ''}`}>
         <div className="debt-card__row">
           <div className="debt-card__users">
-            <div className={`debt-card__avatar ${isPaid ? 'debt-card__avatar--paid' : ''}`} style={{ background: getAvatarColor(debt.fromUserId) }}>
-              {getInitial(debt.fromUser?.name)}
+            <div
+              className={`debt-card__avatar ${isPaid ? 'debt-card__avatar--paid' : ''}`}
+              style={{
+                background: debt.fromUser?.avatarUrl ? 'transparent' : getAvatarColor(debt.fromUserId),
+                overflow: 'hidden'
+              }}
+            >
+              {debt.fromUser?.avatarUrl ? (
+                <img
+                  src={resolveAssetUrl(debt.fromUser.avatarUrl)}
+                  alt={debt.fromUser.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                />
+              ) : (
+                getInitial(debt.fromUser?.name)
+              )}
             </div>
             <span className="debt-card__arrow">→</span>
-            <div className={`debt-card__avatar ${isPaid ? 'debt-card__avatar--paid' : ''}`} style={{ background: getAvatarColor(debt.toUserId) }}>
-              {getInitial(debt.toUser?.name)}
+            <div
+              className={`debt-card__avatar ${isPaid ? 'debt-card__avatar--paid' : ''}`}
+              style={{
+                background: debt.toUser?.avatarUrl ? 'transparent' : getAvatarColor(debt.toUserId),
+                overflow: 'hidden'
+              }}
+            >
+              {debt.toUser?.avatarUrl ? (
+                <img
+                  src={resolveAssetUrl(debt.toUser.avatarUrl)}
+                  alt={debt.toUser.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                />
+              ) : (
+                getInitial(debt.toUser?.name)
+              )}
             </div>
             <div className="debt-card__names-wrap">
               <span className={`debt-card__names ${isPaid ? 'debt-card__names--paid' : ''}`}>
@@ -345,8 +373,22 @@ function DebtSummary() {
                       
                       return (
                         <div key={uid} className={`balance-pill ${net > 0 ? 'balance-pill--positive' : net < 0 ? 'balance-pill--negative' : ''}`}>
-                          <div className="balance-pill__avatar" style={{ background: getAvatarColor(uid) }}>
-                            {getInitial(userObj?.name)}
+                          <div
+                            className="balance-pill__avatar"
+                            style={{
+                              background: userObj?.avatarUrl ? 'transparent' : getAvatarColor(uid),
+                              overflow: 'hidden'
+                            }}
+                          >
+                            {userObj?.avatarUrl ? (
+                              <img
+                                src={resolveAssetUrl(userObj.avatarUrl)}
+                                alt={userObj.name}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                              />
+                            ) : (
+                              getInitial(userObj?.name)
+                            )}
                           </div>
                           <div className="balance-pill__info">
                             <span className="balance-pill__name">{getName(userObj)}</span>

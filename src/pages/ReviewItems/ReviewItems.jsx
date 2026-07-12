@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { createExpense } from '../../services/expenses.service'
 import { getGroup } from '../../services/groups.service'
-import { extractErrorMessage } from '../../services/api'
+import { extractErrorMessage, resolveAssetUrl } from '../../services/api'
 import { getCurrentUserFromToken } from '../../services/auth.service'
 import './ReviewItems.css'
 
@@ -211,9 +211,20 @@ function ReviewItems() {
             >
               <span
                 className="review-items__paid-initial"
-                style={{ background: paidBy === m.id ? 'rgba(255,255,255,0.3)' : avatarColors[idx % avatarColors.length] }}
+                style={{
+                  background: m.avatarUrl ? 'transparent' : (paidBy === m.id ? 'rgba(255,255,255,0.3)' : avatarColors[idx % avatarColors.length]),
+                  overflow: 'hidden'
+                }}
               >
-                {getInitial(m.name)}
+                {m.avatarUrl ? (
+                  <img
+                    src={resolveAssetUrl(m.avatarUrl)}
+                    alt={m.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  />
+                ) : (
+                  getInitial(m.name)
+                )}
               </span>
               {m.id === tokenUser?.id ? 'Tú' : (m.name || 'Usuario')}
             </button>
@@ -270,9 +281,20 @@ function ReviewItems() {
                       />
                       <span
                         className="split-row__avatar"
-                        style={{ background: avatarColors[idx % avatarColors.length] }}
+                        style={{
+                          background: m.avatarUrl ? 'transparent' : avatarColors[idx % avatarColors.length],
+                          overflow: 'hidden'
+                        }}
                       >
-                        {getInitial(m.name)}
+                        {m.avatarUrl ? (
+                          <img
+                            src={resolveAssetUrl(m.avatarUrl)}
+                            alt={m.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                          />
+                        ) : (
+                          getInitial(m.name)
+                        )}
                       </span>
                       <span className="split-row__name">
                         {m.id === tokenUser?.id ? 'Tú' : (m.name || 'Usuario')}
