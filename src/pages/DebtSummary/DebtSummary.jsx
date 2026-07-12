@@ -214,7 +214,27 @@ function DebtSummary() {
             </div>
             <div className="debt-card__names-wrap">
               <span className={`debt-card__names ${isPaid ? 'debt-card__names--paid' : ''}`}>
-                {getName(debt.fromUser)} {isPaid ? '→' : 'debe a'} {getName(debt.toUser)}
+                {(() => {
+                  const fromName = debt.fromUserId === currentUser?.id ? 'Yo' : (debt.fromUser?.name?.split(' ')[0] || 'Usuario')
+                  const toName = debt.toUserId === currentUser?.id ? 'mí' : (debt.toUser?.name?.split(' ')[0] || 'Usuario')
+                  if (isPaid) {
+                    if (debt.fromUserId === currentUser?.id) {
+                      return `Yo le pagué a ${toName}`
+                    } else if (debt.toUserId === currentUser?.id) {
+                      return `${fromName} me pagó`
+                    } else {
+                      return `${fromName} le pagó a ${toName}`
+                    }
+                  } else {
+                    if (debt.fromUserId === currentUser?.id) {
+                      return `Yo le debo a ${toName}`
+                    } else if (debt.toUserId === currentUser?.id) {
+                      return `${fromName} me debe a mí`
+                    } else {
+                      return `${fromName} le debe a ${toName}`
+                    }
+                  }
+                })()}
               </span>
             </div>
           </div>
@@ -331,7 +351,13 @@ function DebtSummary() {
                           <div className="balance-pill__info">
                             <span className="balance-pill__name">{getName(userObj)}</span>
                             <span className="balance-pill__amount">
-                              {net > 0 ? `Le deben S/${net.toFixed(2)}` : net < 0 ? `Debe S/${Math.abs(net).toFixed(2)}` : 'En paz ✓'}
+                              {(() => {
+                                if (uid === currentUser?.id) {
+                                  return net > 0 ? `Te deben S/${net.toFixed(2)}` : net < 0 ? `Debes S/${Math.abs(net).toFixed(2)}` : 'En paz ✓'
+                                } else {
+                                  return net > 0 ? `Le deben S/${net.toFixed(2)}` : net < 0 ? `Debe S/${Math.abs(net).toFixed(2)}` : 'En paz ✓'
+                                }
+                              })()}
                             </span>
                           </div>
                         </div>
