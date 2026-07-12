@@ -17,15 +17,19 @@ function GroupList() {
     let cancelled = false
     setLoading(true)
     getMyGroups()
-      .then(async (data) => {
+      .then((data) => {
         if (cancelled) return
         const sorted = [...data].sort((a, b) =>
           (a.name || '').localeCompare(b.name || '', 'es')
-        )
+        ).map(g => ({ ...g, myBalance: undefined }))
 
-        // Calculate myBalance dynamically from pending debts
+        setGroups(sorted)
+        setError(null)
+        setLoading(false)
+
+        // Fetch balances asynchronously in background
         const myId = currentUser?.id
-        const groupsWithBalance = await Promise.all(sorted.map(async (group) => {
+        sorted.forEach(async (group) => {
           try {
             const debtsList = await getDebts(group.id, 'PENDING')
             let balance = 0
@@ -37,21 +41,21 @@ function GroupList() {
               if (toId === myId) balance += d.amount
               if (fromId === myId) balance -= d.amount
             })
-            return { ...group, myBalance: balance }
+            if (!cancelled) {
+              setGroups(prev => prev.map(g => g.id === group.id ? { ...g, myBalance: balance } : g))
+            }
           } catch {
-            return { ...group, myBalance: 0 }
+            if (!cancelled) {
+              setGroups(prev => prev.map(g => g.id === group.id ? { ...g, myBalance: 0 } : g))
+            }
           }
-        }))
-
-        if (cancelled) return
-        setGroups(groupsWithBalance)
-        setError(null)
+        })
       })
       .catch((err) => {
         if (cancelled) return
         setError(extractErrorMessage(err, 'No pudimos cargar tus grupos.'))
+        setLoading(false)
       })
-      .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [currentUser?.id])
 
@@ -145,7 +149,7 @@ function GroupList() {
                           : group.myBalance < 0
                           ? `-S/ ${Math.abs(group.myBalance).toFixed(2)}`
                           : 'S/ 0.00')
-                      : ''}
+                      : 'Cargando...'}
                   </span>
                 </div>
               )
