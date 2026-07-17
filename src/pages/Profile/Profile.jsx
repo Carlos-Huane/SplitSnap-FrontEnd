@@ -70,6 +70,7 @@ function Profile() {
   const [customAmount, setCustomAmount] = useState('');
   const [toast, setToast] = useState('');
   const [loading, setLoading] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
   // Cargar perfil desde API al montar
   useEffect(() => {
@@ -102,6 +103,10 @@ function Profile() {
     };
     loadProfileAndCredits();
   }, []);
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [profileData?.avatarUrl, profileAvatar]);
 
   if (!currentUser) return null;
   const user = profileData || currentUser;
@@ -290,10 +295,16 @@ function Profile() {
     user.name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('');
 
   const avatarSrc = resolveAssetUrl(profileData?.avatarUrl || profileAvatar);
+  const showAvatarImg = avatarSrc && !avatarFailed;
   const renderAvatarVisual = (size = 'large') => (
     <div className={`avatar-circle${size === 'small' ? ' small' : ''}`}>
-      {avatarSrc
-        ? <img src={avatarSrc} alt={user.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+      {showAvatarImg
+        ? <img
+            src={avatarSrc}
+            alt={user.name}
+            style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+            onError={() => setAvatarFailed(true)}
+          />
         : getInitials()}
     </div>
   );

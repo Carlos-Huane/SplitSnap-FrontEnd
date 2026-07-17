@@ -20,6 +20,7 @@ function GroupDetail() {
   const [debts, setDebts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [failedAvatars, setFailedAvatars] = useState(new Set())
 
   useEffect(() => {
     if (!id) return
@@ -123,15 +124,16 @@ function GroupDetail() {
                     <div
                       className="balance-row__avatar"
                       style={{
-                        background: member.avatarUrl ? 'transparent' : avatarColors[idx % avatarColors.length],
+                        background: (member.avatarUrl && !failedAvatars.has(member.id)) ? 'transparent' : avatarColors[idx % avatarColors.length],
                         overflow: 'hidden'
                       }}
                     >
-                      {member.avatarUrl ? (
+                      {(member.avatarUrl && !failedAvatars.has(member.id)) ? (
                         <img
                           src={resolveAssetUrl(member.avatarUrl)}
                           alt={member.name}
                           style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                          onError={() => setFailedAvatars(prev => new Set(prev).add(member.id))}
                         />
                       ) : (
                         getInitial(member.name)
