@@ -31,6 +31,7 @@ function AddExpense() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState(null)
+  const [failedAvatars, setFailedAvatars] = useState(new Set())
 
   // Cargar grupo + miembros del backend
   useEffect(() => {
@@ -224,15 +225,16 @@ function AddExpense() {
                   <span
                     className="add-expense__member-initial"
                     style={{
-                      background: member.avatarUrl ? 'transparent' : (active ? 'rgba(255,255,255,0.3)' : avatarColors[idx % avatarColors.length]),
+                      background: (member.avatarUrl && !failedAvatars.has(member.id)) ? 'transparent' : (active ? 'rgba(255,255,255,0.3)' : avatarColors[idx % avatarColors.length]),
                       overflow: 'hidden'
                     }}
                   >
-                    {member.avatarUrl ? (
+                    {(member.avatarUrl && !failedAvatars.has(member.id)) ? (
                       <img
                         src={resolveAssetUrl(member.avatarUrl)}
                         alt={member.name}
                         style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                        onError={() => setFailedAvatars(prev => new Set(prev).add(member.id))}
                       />
                     ) : (
                       getInitial(member.name)

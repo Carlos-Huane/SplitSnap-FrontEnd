@@ -40,6 +40,9 @@ function DebtSummary() {
   const [debtToPay, setDebtToPay] = useState(null)
   const [isSubmittingCredit, setIsSubmittingCredit] = useState(false)
 
+  const [failedAvatars, setFailedAvatars] = useState(new Set())
+  const markAvatarFailed = (id) => setFailedAvatars(prev => new Set(prev).add(id))
+
   // --- EFECTO: LLAMADA A LA API ---
   const fetchDebts = useCallback(async () => {
     setLoading(true)
@@ -208,15 +211,16 @@ function DebtSummary() {
             <div
               className={`debt-card__avatar ${isPaid ? 'debt-card__avatar--paid' : ''}`}
               style={{
-                background: debt.fromUser?.avatarUrl ? 'transparent' : getAvatarColor(debt.fromUserId),
+                background: (debt.fromUser?.avatarUrl && !failedAvatars.has(debt.fromUserId)) ? 'transparent' : getAvatarColor(debt.fromUserId),
                 overflow: 'hidden'
               }}
             >
-              {debt.fromUser?.avatarUrl ? (
+              {(debt.fromUser?.avatarUrl && !failedAvatars.has(debt.fromUserId)) ? (
                 <img
                   src={resolveAssetUrl(debt.fromUser.avatarUrl)}
                   alt={debt.fromUser.name}
                   style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  onError={() => markAvatarFailed(debt.fromUserId)}
                 />
               ) : (
                 getInitial(debt.fromUser?.name)
@@ -226,15 +230,16 @@ function DebtSummary() {
             <div
               className={`debt-card__avatar ${isPaid ? 'debt-card__avatar--paid' : ''}`}
               style={{
-                background: debt.toUser?.avatarUrl ? 'transparent' : getAvatarColor(debt.toUserId),
+                background: (debt.toUser?.avatarUrl && !failedAvatars.has(debt.toUserId)) ? 'transparent' : getAvatarColor(debt.toUserId),
                 overflow: 'hidden'
               }}
             >
-              {debt.toUser?.avatarUrl ? (
+              {(debt.toUser?.avatarUrl && !failedAvatars.has(debt.toUserId)) ? (
                 <img
                   src={resolveAssetUrl(debt.toUser.avatarUrl)}
                   alt={debt.toUser.name}
                   style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  onError={() => markAvatarFailed(debt.toUserId)}
                 />
               ) : (
                 getInitial(debt.toUser?.name)
@@ -376,15 +381,16 @@ function DebtSummary() {
                           <div
                             className="balance-pill__avatar"
                             style={{
-                              background: userObj?.avatarUrl ? 'transparent' : getAvatarColor(uid),
+                              background: (userObj?.avatarUrl && !failedAvatars.has(uid)) ? 'transparent' : getAvatarColor(uid),
                               overflow: 'hidden'
                             }}
                           >
-                            {userObj?.avatarUrl ? (
+                            {(userObj?.avatarUrl && !failedAvatars.has(uid)) ? (
                               <img
                                 src={resolveAssetUrl(userObj.avatarUrl)}
                                 alt={userObj.name}
                                 style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                                onError={() => markAvatarFailed(uid)}
                               />
                             ) : (
                               getInitial(userObj?.name)

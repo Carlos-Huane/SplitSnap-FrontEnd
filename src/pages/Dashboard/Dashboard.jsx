@@ -23,6 +23,7 @@ function Dashboard() {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [avatarFailed, setAvatarFailed] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -72,6 +73,11 @@ function Dashboard() {
   const userName = profile?.name || currentUser?.name || ''
   const firstName = userName.split(' ')[0] || 'Usuario'
   const avatarSrc = resolveAssetUrl(profile?.avatarUrl || profileAvatar)
+  const showAvatarImg = avatarSrc && !avatarFailed
+
+  useEffect(() => {
+    setAvatarFailed(false)
+  }, [avatarSrc])
 
   const netBalance = useMemo(() => {
     return groups.reduce((sum, g) => sum + (Number(g.myBalance) || 0), 0)
@@ -94,8 +100,13 @@ function Dashboard() {
         <div className="user-info" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
           <span className="user-name">{userName}</span>
           <div className="avatar">
-            {avatarSrc
-              ? <img src={avatarSrc} alt={userName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+            {showAvatarImg
+              ? <img
+                  src={avatarSrc}
+                  alt={userName}
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                  onError={() => setAvatarFailed(true)}
+                />
               : getInitials(userName)}
           </div>
         </div>

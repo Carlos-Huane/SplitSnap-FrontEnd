@@ -36,6 +36,7 @@ function ReviewItems() {
 
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
+  const [failedAvatars, setFailedAvatars] = useState(new Set())
 
   useEffect(() => {
     if (!groupId) return
@@ -212,15 +213,16 @@ function ReviewItems() {
               <span
                 className="review-items__paid-initial"
                 style={{
-                  background: m.avatarUrl ? 'transparent' : (paidBy === m.id ? 'rgba(255,255,255,0.3)' : avatarColors[idx % avatarColors.length]),
+                  background: (m.avatarUrl && !failedAvatars.has(m.id)) ? 'transparent' : (paidBy === m.id ? 'rgba(255,255,255,0.3)' : avatarColors[idx % avatarColors.length]),
                   overflow: 'hidden'
                 }}
               >
-                {m.avatarUrl ? (
+                {(m.avatarUrl && !failedAvatars.has(m.id)) ? (
                   <img
                     src={resolveAssetUrl(m.avatarUrl)}
                     alt={m.name}
                     style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                    onError={() => setFailedAvatars(prev => new Set(prev).add(m.id))}
                   />
                 ) : (
                   getInitial(m.name)
@@ -282,15 +284,16 @@ function ReviewItems() {
                       <span
                         className="split-row__avatar"
                         style={{
-                          background: m.avatarUrl ? 'transparent' : avatarColors[idx % avatarColors.length],
+                          background: (m.avatarUrl && !failedAvatars.has(m.id)) ? 'transparent' : avatarColors[idx % avatarColors.length],
                           overflow: 'hidden'
                         }}
                       >
-                        {m.avatarUrl ? (
+                        {(m.avatarUrl && !failedAvatars.has(m.id)) ? (
                           <img
                             src={resolveAssetUrl(m.avatarUrl)}
                             alt={m.name}
                             style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                            onError={() => setFailedAvatars(prev => new Set(prev).add(m.id))}
                           />
                         ) : (
                           getInitial(m.name)
